@@ -225,120 +225,121 @@ export default function CoursesPage() {
                     {courses.map((course, i) => {
                         const diff = difficultyConfig[course.difficulty];
                         return (
-                            <motion.div
-                                key={course.id}
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
-                                whileHover={course.unlocked ? { y: -6, transition: { duration: 0.2 } } : {}}
-                                className={`relative rounded-2xl overflow-hidden cursor-pointer group ${course.borderGlow} transition-all duration-300 ${!course.unlocked ? "opacity-50" : ""
-                                    }`}
-                            >
-                                {/* Gradient background glow */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${course.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                            <Link key={course.id} href={course.unlocked ? `/courses/${course.id}` : "#"}>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
+                                    whileHover={course.unlocked ? { y: -6, transition: { duration: 0.2 } } : {}}
+                                    className={`relative rounded-2xl overflow-hidden cursor-pointer group ${course.borderGlow} transition-all duration-300 h-full ${!course.unlocked ? "opacity-50" : ""
+                                        }`}
+                                >
+                                    {/* Gradient background glow */}
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${course.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
-                                {/* Card body */}
-                                <div className="relative p-6 bg-white/[0.03] border border-white/[0.08] group-hover:border-white/[0.15] rounded-2xl backdrop-blur-sm transition-all duration-300 h-full flex flex-col">
-                                    {/* Lock overlay */}
-                                    {!course.unlocked && (
-                                        <div className="absolute inset-0 rounded-2xl bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-10">
-                                            <motion.div
-                                                initial={{ scale: 0.8 }}
-                                                animate={{ scale: 1 }}
-                                                className="flex flex-col items-center gap-3"
-                                            >
-                                                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                                    <Lock className="w-5 h-5 text-zinc-500" />
-                                                </div>
-                                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Complete prerequisites</span>
-                                            </motion.div>
-                                        </div>
-                                    )}
-
-                                    {/* Top row: emoji + difficulty */}
-                                    <div className="flex items-start justify-between mb-4">
-                                        <motion.div
-                                            whileHover={{ scale: 1.15, rotate: 10 }}
-                                            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] flex items-center justify-center text-2xl"
-                                        >
-                                            {course.emoji}
-                                        </motion.div>
-                                        <span className={`px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider ${diff.bg} ${diff.color}`}>
-                                            {diff.label}
-                                        </span>
-                                    </div>
-
-                                    {/* Title + description */}
-                                    <div className="mb-4 flex-1">
-                                        <h3 className="text-lg font-black text-white group-hover:text-neon-green transition-colors leading-tight">
-                                            {course.title}
-                                        </h3>
-                                        <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed line-clamp-2">
-                                            {course.description}
-                                        </p>
-                                    </div>
-
-                                    {/* Tags */}
-                                    <div className="flex flex-wrap gap-1.5 mb-4">
-                                        {course.tags.map((tag) => (
-                                            <span
-                                                key={tag}
-                                                className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-[9px] text-zinc-400 font-bold uppercase tracking-wider group-hover:border-white/[0.12] transition-colors"
-                                            >
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    {/* Stats row */}
-                                    <div className="flex items-center gap-4 mb-4 text-[10px] text-zinc-500 font-bold">
-                                        <span className="flex items-center gap-1">
-                                            <BookOpen className="w-3 h-3" /> {course.modules} modules
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Clock className="w-3 h-3" /> {course.duration}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Users className="w-3 h-3" /> {course.students}
-                                        </span>
-                                    </div>
-
-                                    {/* Progress bar */}
-                                    <div className="mb-4">
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">Progress</span>
-                                            <span className="text-[9px] text-zinc-500 font-bold">{course.progress}%</span>
-                                        </div>
-                                        <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${course.progress}%` }}
-                                                transition={{ delay: i * 0.1 + 0.3, duration: 0.8 }}
-                                                className={`h-full rounded-full bg-gradient-to-r ${course.barColor}`}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Footer */}
-                                    <div className="flex items-center justify-between pt-4 border-t border-white/[0.05]">
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,255,163,0.06)' }}>
-                                            <Zap className={`w-3.5 h-3.5 ${course.accentColor}`} />
-                                            <span className={`text-xs font-black ${course.accentColor}`}>+{course.xp} XP</span>
-                                        </div>
-
-                                        {course.unlocked && (
-                                            <motion.button
-                                                whileHover={{ scale: 1.05, x: 3 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r ${course.barColor} text-black text-[11px] font-black transition-all`}
-                                            >
-                                                Start
-                                                <ArrowRight className="w-3.5 h-3.5" />
-                                            </motion.button>
+                                    {/* Card body */}
+                                    <div className="relative p-6 bg-white/[0.03] border border-white/[0.08] group-hover:border-white/[0.15] rounded-2xl backdrop-blur-sm transition-all duration-300 h-full flex flex-col">
+                                        {/* Lock overlay */}
+                                        {!course.unlocked && (
+                                            <div className="absolute inset-0 rounded-2xl bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-10">
+                                                <motion.div
+                                                    initial={{ scale: 0.8 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="flex flex-col items-center gap-3"
+                                                >
+                                                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                                                        <Lock className="w-5 h-5 text-zinc-500" />
+                                                    </div>
+                                                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Complete prerequisites</span>
+                                                </motion.div>
+                                            </div>
                                         )}
+
+                                        {/* Top row: emoji + difficulty */}
+                                        <div className="flex items-start justify-between mb-4">
+                                            <motion.div
+                                                whileHover={{ scale: 1.15, rotate: 10 }}
+                                                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] flex items-center justify-center text-2xl"
+                                            >
+                                                {course.emoji}
+                                            </motion.div>
+                                            <span className={`px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider ${diff.bg} ${diff.color}`}>
+                                                {diff.label}
+                                            </span>
+                                        </div>
+
+                                        {/* Title + description */}
+                                        <div className="mb-4 flex-1">
+                                            <h3 className="text-lg font-black text-white group-hover:text-neon-green transition-colors leading-tight">
+                                                {course.title}
+                                            </h3>
+                                            <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed line-clamp-2">
+                                                {course.description}
+                                            </p>
+                                        </div>
+
+                                        {/* Tags */}
+                                        <div className="flex flex-wrap gap-1.5 mb-4">
+                                            {course.tags.map((tag) => (
+                                                <span
+                                                    key={tag}
+                                                    className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-[9px] text-zinc-400 font-bold uppercase tracking-wider group-hover:border-white/[0.12] transition-colors"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+
+                                        {/* Stats row */}
+                                        <div className="flex items-center gap-4 mb-4 text-[10px] text-zinc-500 font-bold">
+                                            <span className="flex items-center gap-1">
+                                                <BookOpen className="w-3 h-3" /> {course.modules} modules
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Clock className="w-3 h-3" /> {course.duration}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Users className="w-3 h-3" /> {course.students}
+                                            </span>
+                                        </div>
+
+                                        {/* Progress bar */}
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">Progress</span>
+                                                <span className="text-[9px] text-zinc-500 font-bold">{course.progress}%</span>
+                                            </div>
+                                            <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${course.progress}%` }}
+                                                    transition={{ delay: i * 0.1 + 0.3, duration: 0.8 }}
+                                                    className={`h-full rounded-full bg-gradient-to-r ${course.barColor}`}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="flex items-center justify-between pt-4 border-t border-white/[0.05]">
+                                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,255,163,0.06)' }}>
+                                                <Zap className={`w-3.5 h-3.5 ${course.accentColor}`} />
+                                                <span className={`text-xs font-black ${course.accentColor}`}>+{course.xp} XP</span>
+                                            </div>
+
+                                            {course.unlocked && (
+                                                <motion.span
+                                                    whileHover={{ scale: 1.05, x: 3 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r ${course.barColor} text-black text-[11px] font-black transition-all`}
+                                                >
+                                                    Start
+                                                    <ArrowRight className="w-3.5 h-3.5" />
+                                                </motion.span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
+                                </motion.div>
+                            </Link>
                         );
                     })}
                 </div>
