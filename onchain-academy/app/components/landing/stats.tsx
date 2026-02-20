@@ -3,9 +3,20 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { Zap, Users, BookOpen, Trophy } from "lucide-react";
+import { Zap, Users, BookOpen, Trophy, LucideIcon } from "lucide-react";
 
-const stats = [
+interface Stat {
+    label: string;
+    value: number;
+    suffix: string;
+    prefix?: string;
+    icon: LucideIcon;
+    color: string;
+    iconColor: string;
+    decimals?: number;
+}
+
+const stats: Stat[] = [
     { label: "Active Builders", value: 12400, suffix: "+", icon: Users, color: "from-neon-green to-emerald-400", iconColor: "text-neon-green" },
     { label: "XP Distributed", value: 8.5, suffix: "M+", decimals: 1, icon: Zap, color: "from-amber-400 to-orange-400", iconColor: "text-amber-400" },
     { label: "Quests Completed", value: 85000, suffix: "+", icon: BookOpen, color: "from-neon-cyan to-blue-400", iconColor: "text-neon-cyan" },
