@@ -59,13 +59,13 @@ export function TiltCard({
                 perspective: "1000px",
             }}
             className={cn(
-                "relative rounded-2xl overflow-hidden transition-shadow duration-500 group",
+                "relative overflow-hidden transition-shadow duration-500 group",
                 className
             )}
         >
             {/* Animated gradient border */}
             <div
-                className="absolute -inset-[1px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute -inset-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{
                     background: `conic-gradient(from var(--angle, 0deg), transparent, ${glowColor}, transparent, ${glowColor}, transparent)`,
                     animation: isHovered ? "spin-gradient 3s linear infinite" : "none",
@@ -85,8 +85,8 @@ export function TiltCard({
             />
 
             {/* Card content */}
-            <div className="relative bg-[#0a0f1a]/90 backdrop-blur-sm rounded-2xl p-px z-20">
-                <div className="rounded-2xl bg-[#0a0f1a]/90 relative z-10">
+            <div className="relative bg-[#0a0f1a]/90 backdrop-blur-sm p-px z-20">
+                <div className="bg-[#0a0f1a]/90 relative z-10">
                     {children}
                 </div>
             </div>

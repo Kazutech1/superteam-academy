@@ -6,8 +6,9 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { ArrowRight, BookOpen, Clock, Star, Zap, Trophy, Flame, Target, Swords, Shield, Crown, Lock, Users, ChevronRight } from "lucide-react";
 
-const paths = [
+export const paths = [
     {
+        slug: "intro-to-solana",
         title: "Solana Fundamentals",
         description: "Accounts, transactions, programs, and the runtime model.",
         longDesc: "Master the Solana runtime, understand accounts, craft transactions, and deploy your first program. The foundation every builder needs.",
@@ -20,7 +21,6 @@ const paths = [
         boss: "The Validator",
         bossEmoji: "🤖",
         bossHp: 5000,
-        color: "from-orange-500 to-amber-400",
         ringColor: "#f97316",
         borderColor: "border-orange-500/30",
         glowColor: "rgba(249,115,22,0.15)",
@@ -40,6 +40,7 @@ const paths = [
         completionRate: 78,
     },
     {
+        slug: "smart-contracts-101",
         title: "Anchor Framework",
         description: "PDAs, CPIs, Token-2022, Metaplex Core, and full-stack dApps.",
         longDesc: "Build, test, and deploy production programs with Anchor. Master PDAs, cross-program invocations, Token-2022, and Metaplex Core NFTs.",
@@ -52,7 +53,6 @@ const paths = [
         boss: "The Anchor King",
         bossEmoji: "⚓",
         bossHp: 12000,
-        color: "from-neon-green to-emerald-400",
         ringColor: "#00ffa3",
         borderColor: "border-neon-green/30",
         glowColor: "rgba(0,255,163,0.15)",
@@ -72,6 +72,7 @@ const paths = [
         completionRate: 54,
     },
     {
+        slug: "defi-on-solana",
         title: "DeFi Developer",
         description: "AMMs, lending, oracles, liquidation engines.",
         longDesc: "Build production DeFi protocols from scratch. AMMs, lending markets, oracle integration, liquidation engines, and MEV protection.",
@@ -84,7 +85,6 @@ const paths = [
         boss: "The Liquidator",
         bossEmoji: "💀",
         bossHp: 25000,
-        color: "from-neon-cyan to-blue-500",
         ringColor: "#00f0ff",
         borderColor: "border-neon-cyan/30",
         glowColor: "rgba(0,240,255,0.15)",
@@ -104,6 +104,7 @@ const paths = [
         completionRate: 31,
     },
     {
+        slug: "solana-security",
         title: "Solana Security",
         description: "Audit programs, find vulns, secure protocols.",
         longDesc: "Become a security expert. Learn to audit Solana programs, find vulnerabilities, build exploit PoCs, and secure protocols against attacks.",
@@ -116,7 +117,6 @@ const paths = [
         boss: "The Exploit",
         bossEmoji: "🐉",
         bossHp: 30000,
-        color: "from-red-500 to-rose-400",
         ringColor: "#ef4444",
         borderColor: "border-red-500/30",
         glowColor: "rgba(239,68,68,0.15)",
@@ -139,7 +139,7 @@ const paths = [
 ];
 
 /* ─── Difficulty Stars ─── */
-function DifficultyStars({ count, max = 4, color }: { count: number; max?: number; color: string }) {
+export function DifficultyStars({ count, max = 4, color }: { count: number; max?: number; color: string }) {
     return (
         <div className="flex gap-0.5">
             {Array.from({ length: max }).map((_, i) => (
@@ -150,34 +150,35 @@ function DifficultyStars({ count, max = 4, color }: { count: number; max?: numbe
 }
 
 /* ─── Progress Ring ─── */
-function ProgressRing({ percent, color, size = 52 }: { percent: number; color: string; size?: number }) {
+export function ProgressRing({ percent, color, size = 52 }: { percent: number; color: string; size?: number }) {
     const r = (size - 6) / 2;
     const circ = 2 * Math.PI * r;
     return (
         <div className="relative" style={{ width: size, height: size }}>
             <svg className="-rotate-90" width={size} height={size}>
-                <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                <motion.circle
-                    cx={size / 2} cy={size / 2} r={r}
-                    fill="none" stroke={color} strokeWidth="3" strokeLinecap="round"
-                    strokeDasharray={circ}
-                    initial={{ strokeDashoffset: circ }}
-                    whileInView={{ strokeDashoffset: circ * (1 - percent / 100) }}
+                <rect x="0" y="0" width={size} height={size} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" />
+                <motion.rect
+                    x="1" y="1" width={size - 2}
+                    height={size - 2}
+                    fill="none" stroke={color} strokeWidth="2"
+                    strokeDasharray={`${(percent / 100) * (2 * (size - 2) + 2 * (size - 2))} ${2 * (size - 2) + 2 * (size - 2)}`}
+                    initial={{ strokeDashoffset: 2 * (size - 2) + 2 * (size - 2) }}
+                    whileInView={{ strokeDashoffset: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
                 />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] font-black text-white">{percent}%</span>
+                <span className="text-[10px] font-black font-mono text-white">{percent}%</span>
             </div>
         </div>
     );
 }
 
 /* ─── Quest Card ─── */
-function QuestCard({ path, index }: { path: typeof paths[number]; index: number }) {
-    const [expanded, setExpanded] = useState(false);
+export function QuestCard({ path, index, href }: { path: typeof paths[number]; index: number; href?: string }) {
     const isLocked = 'locked' in path && path.locked;
+    const linkHref = href || (isLocked ? "#" : `/courses/${path.slug}`);
 
     return (
         <motion.div
@@ -189,57 +190,60 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
         >
             {/* Outer glow on hover */}
             <div
-                className="absolute -inset-2 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+                className="absolute -inset-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
                 style={{ background: `radial-gradient(ellipse, ${path.glowColor}, transparent 70%)` }}
             />
 
-            <div className={`relative rounded-2xl border ${isLocked ? "border-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.15]"} bg-[#080c14] overflow-hidden transition-all duration-500 ${isLocked ? "opacity-70" : ""}`}>
-                {/* Animated gradient border on top */}
-                <div className={`h-[2px] bg-gradient-to-r ${path.color}`} />
+            <div className={`relative border ${isLocked ? "border-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.15]"} bg-[#080c14] overflow-hidden transition-all duration-500 ${isLocked ? "opacity-70" : ""}`}>
+                {/* Top accent line */}
+                <div className={`h-[2px] ${path.bgAccent}`} />
+
+                {/* Corner brackets */}
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
 
                 {/* === Card Header === */}
                 <div className="p-6 pb-0">
                     <div className="flex items-start justify-between gap-4">
                         {/* Left: Quest info */}
                         <div className="flex items-start gap-4 flex-1 min-w-0">
-                            {/* Quest Icon / Boss */}
+                            {/* Quest Icon */}
                             <motion.div
                                 whileHover={!isLocked ? { rotate: [0, -10, 10, -5, 0], scale: 1.1 } : {}}
-                                className={`w-16 h-16 rounded-xl bg-gradient-to-br ${path.color} p-[1.5px] flex-shrink-0 relative`}
+                                className={`w-16 h-16 border ${isLocked ? "border-white/10" : path.borderColor} bg-white/[0.02] flex-shrink-0 relative flex items-center justify-center text-2xl`}
                             >
-                                <div className="w-full h-full rounded-xl bg-[#080c14] flex items-center justify-center text-2xl relative">
-                                    {isLocked ? <Lock className="w-6 h-6 text-zinc-600" /> : path.questIcon}
-                                    {/* Rarity glow ring */}
-                                    {!isLocked && (
-                                        <motion.div
-                                            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                            className={`absolute inset-0 rounded-xl border ${path.borderColor}`}
-                                        />
-                                    )}
-                                </div>
+                                {isLocked ? <Lock className="w-6 h-6 text-zinc-600" /> : path.questIcon}
+                                {!isLocked && (
+                                    <motion.div
+                                        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                        className={`absolute inset-0 border ${path.borderColor}`}
+                                    />
+                                )}
                             </motion.div>
 
                             <div className="flex-1 min-w-0 space-y-1.5">
                                 {/* Tags row */}
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${path.tagColor}`}>
+                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 border ${path.tagColor}`}>
                                         {path.tag}
                                     </span>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest ${path.rarityColor}`}>
+                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest ${path.rarityColor}`}>
                                         {path.rarity}
                                     </span>
                                 </div>
 
                                 {/* Title */}
-                                <h3 className="text-xl md:text-2xl font-black text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70 transition-all">
+                                <h3 className="text-xl md:text-2xl font-black font-mono text-white">
                                     {path.title}
                                 </h3>
 
                                 {/* Difficulty + Level */}
                                 <div className="flex items-center gap-3">
                                     <DifficultyStars count={path.difficulty} color={path.textColor} />
-                                    <span className={`text-xs font-bold ${path.textColor}`}>{path.level}</span>
+                                    <span className={`text-xs font-bold font-mono ${path.textColor}`}>{path.level}</span>
                                 </div>
                             </div>
                         </div>
@@ -249,15 +253,10 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
                             <motion.div
                                 animate={!isLocked ? { scale: [1, 1.05, 1] } : {}}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r ${path.color} relative overflow-hidden`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 ${path.bgAccent} relative overflow-hidden`}
                             >
-                                <motion.div
-                                    animate={{ x: [-80, 120] }}
-                                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-                                    className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                                />
                                 <Zap className="w-4 h-4 text-black" />
-                                <span className="text-sm font-black text-black">{path.xp.toLocaleString()} XP</span>
+                                <span className="text-sm font-black font-mono text-black">{path.xp.toLocaleString()} XP</span>
                             </motion.div>
                             <ProgressRing percent={path.completionRate} color={path.ringColor} />
                         </div>
@@ -266,12 +265,12 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
 
                 {/* === Description === */}
                 <div className="px-6 pt-3 pb-4">
-                    <p className="text-sm text-zinc-400 leading-relaxed">{path.longDesc}</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed font-mono">{path.longDesc}</p>
                 </div>
 
                 {/* === Stats Bar === */}
                 <div className="px-6 pb-4">
-                    <div className="flex items-center gap-4 text-[11px] flex-wrap">
+                    <div className="flex items-center gap-4 text-[11px] font-mono flex-wrap">
                         <span className="text-zinc-500 flex items-center gap-1.5">
                             <BookOpen className="w-3.5 h-3.5" />
                             <span className="font-bold text-zinc-300">{path.modules}</span> Modules
@@ -295,7 +294,7 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
                 </div>
 
                 {/* === Boss Challenge === */}
-                <div className="mx-6 mb-4 p-3 rounded-lg bg-red-500/[0.04] border border-red-500/10">
+                <div className="mx-6 mb-4 p-3 bg-red-500/[0.04] border border-red-500/10">
                     <div className="flex items-center gap-3">
                         <motion.div
                             animate={!isLocked ? { scale: [1, 1.1, 1] } : {}}
@@ -304,17 +303,17 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
                         >
                             {path.bossEmoji}
                         </motion.div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 font-mono">
                             <div className="flex items-center gap-2">
                                 <Swords className="w-3 h-3 text-red-400" />
                                 <span className="text-[10px] font-black text-red-400 uppercase tracking-wider">Final Boss</span>
                             </div>
                             <div className="text-xs font-bold text-white">{path.boss}</div>
                         </div>
-                        <div className="text-right">
-                            <div className="text-[10px] font-mono text-red-400/60">HP {path.bossHp.toLocaleString()}</div>
-                            <div className="w-20 h-1.5 rounded-full bg-red-900/30 overflow-hidden mt-0.5">
-                                <div className="h-full rounded-full bg-red-500 w-full" />
+                        <div className="text-right font-mono">
+                            <div className="text-[10px] text-red-400/60">HP {path.bossHp.toLocaleString()}</div>
+                            <div className="w-20 h-1.5 bg-red-900/30 overflow-hidden mt-0.5">
+                                <div className="h-full bg-red-500 w-full" />
                             </div>
                         </div>
                     </div>
@@ -322,13 +321,15 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
 
                 {/* === Loot Drops === */}
                 <div className="px-6 pb-4">
-                    <div className="text-[9px] text-zinc-600 uppercase tracking-widest font-black mb-2">🎁 Loot Drops</div>
+                    <div className="text-[9px] text-zinc-600 uppercase tracking-[0.2em] font-mono font-black mb-2">
+                        <span className="text-neon-green/60">// </span>loot_drops
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {path.rewards.map((r, i) => (
                             <motion.div
                                 key={i}
                                 whileHover={{ scale: 1.05, y: -2 }}
-                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-default ${r.type === "NFT"
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 border transition-all cursor-default font-mono ${r.type === "NFT"
                                     ? "bg-amber-400/5 border-amber-400/20 hover:border-amber-400/40"
                                     : "bg-neon-purple/5 border-neon-purple/20 hover:border-neon-purple/40"
                                     }`}
@@ -343,7 +344,7 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
                             </motion.div>
                         ))}
                         {path.loot.map((l, i) => (
-                            <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                            <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/[0.02] border border-white/[0.06] font-mono">
                                 <span className="text-sm">{i === 0 ? "🎨" : "📛"}</span>
                                 <div>
                                     <div className="text-[10px] font-bold text-zinc-400">{l}</div>
@@ -355,7 +356,7 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
                 </div>
 
                 {/* === CTA Footer === */}
-                <div className="px-6 py-4 border-t border-white/[0.04] bg-white/[0.01] flex items-center justify-between">
+                <div className="px-6 py-4 border-t border-white/[0.04] bg-white/[0.01] flex items-center justify-between font-mono">
                     <div className="flex items-center gap-3 text-[10px] text-zinc-500">
                         <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-400/50" /> Avg. 12h/week</span>
                         <span className="text-zinc-700">•</span>
@@ -363,22 +364,17 @@ function QuestCard({ path, index }: { path: typeof paths[number]; index: number 
                     </div>
 
                     {isLocked ? (
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-zinc-500 text-sm font-bold">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white/5 text-zinc-500 text-sm font-bold border border-white/[0.06]">
                             <Lock className="w-4 h-4" />
                             Locked
                         </div>
                     ) : (
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                            <Link href="/auth">
+                            <Link href={linkHref}>
                                 <Button
                                     size="lg"
-                                    className={`bg-gradient-to-r ${path.color} text-black font-black hover:shadow-[0_0_30px_${path.glowColor}] transition-all duration-300 rounded-xl relative overflow-hidden group/btn`}
+                                    className={`btn-hacker ${path.bgAccent} text-black font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
                                 >
-                                    <motion.div
-                                        animate={{ x: [-100, 200] }}
-                                        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-                                        className="absolute inset-y-0 w-12 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                                    />
                                     ⚔️ Begin Quest
                                     <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                 </Button>
@@ -407,19 +403,21 @@ export function LearningPaths() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
-                        className="space-y-4"
+                        className="space-y-5"
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-neon-cyan">
-                            <Swords className="w-3 h-3" />
-                            Quest Lines
+                        <div className="flex items-center gap-3">
+                            <span className="text-neon-green font-mono text-sm">{">"}</span>
+                            <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                                quest_lines
+                            </span>
+                            <div className="flex-1 h-px bg-white/[0.06]" />
                         </div>
                         <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">
                             Choose Your{" "}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-purple">
-                                Quest
-                            </span>
+                            <span className="text-neon-cyan">Quest</span>
                         </h2>
-                        <p className="text-zinc-400 text-lg max-w-xl">
+                        <p className="text-zinc-400 text-sm max-w-xl font-mono leading-relaxed">
+                            <span className="text-neon-green/60">// </span>
                             Each quest line is an RPG campaign. Defeat bosses, earn soulbound loot,
                             and prove your mastery on-chain.
                         </p>
@@ -432,15 +430,15 @@ export function LearningPaths() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                         className="flex items-center gap-3"
                     >
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/[0.06]">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/[0.06] font-mono">
                             <span className="text-[10px] text-zinc-500 font-bold">4 Quests</span>
                             <span className="text-zinc-700">•</span>
                             <span className="text-[10px] text-neon-green font-bold">25,500 Total XP</span>
                         </div>
                         <Link href="/auth">
-                            <Button variant="outline" className="text-neon-cyan border-neon-cyan/30 hover:bg-neon-cyan/10 hover:border-neon-cyan/60 group rounded-xl font-bold">
-                                View All
-                                <ChevronRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            <Button variant="outline" className="btn-slide-right text-neon-cyan border-neon-cyan/30 hover:bg-neon-cyan/10 hover:border-neon-cyan/60 group font-bold font-mono uppercase tracking-wider overflow-hidden relative">
+                                <span className="relative z-10">View All</span>
+                                <ChevronRight className="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform relative z-10" />
                             </Button>
                         </Link>
                     </motion.div>
@@ -449,7 +447,7 @@ export function LearningPaths() {
                 {/* Quest Cards Grid */}
                 <div ref={ref} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {paths.map((path, index) => (
-                        <QuestCard key={index} path={path} index={index} />
+                        <QuestCard key={index} path={path} index={index} href="/auth" />
                     ))}
                 </div>
             </div>

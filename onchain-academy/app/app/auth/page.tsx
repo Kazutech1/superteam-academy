@@ -54,8 +54,8 @@ function SignupBonuses() {
 
     return (
         <div className="space-y-2">
-            <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">
-                🎁 Signup Rewards
+            <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold font-mono">
+                <span className="text-neon-green/40">// </span>signup_rewards
             </div>
             <div className="flex gap-2">
                 {bonuses.map((b, i) => (
@@ -64,7 +64,7 @@ function SignupBonuses() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.8 + i * 0.1 }}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/[0.03] border border-white/[0.06] font-mono"
                     >
                         <span className="text-sm">{b.icon}</span>
                         <span className={`text-[10px] font-bold ${b.color}`}>{b.label}</span>
@@ -92,27 +92,30 @@ function AuthButton({
             icon: <Wallet className="w-5 h-5" />,
             label: "Solana Wallet",
             desc: mode === "signup" ? "Connect to earn XP" : "Sign in with wallet",
-            gradient: "from-neon-green to-emerald-400",
-            glow: "rgba(0,255,163,0.15)",
+            color: "text-neon-green",
+            borderColor: "border-neon-green/20",
             borderHover: "hover:border-neon-green/40",
+            glow: "rgba(0,255,163,0.08)",
             recommended: true,
         },
         google: {
             icon: <GoogleIcon className="w-5 h-5" />,
             label: "Google",
             desc: mode === "signup" ? "Quick start, link wallet later" : "Sign in with Google",
-            gradient: "from-blue-500 to-blue-400",
-            glow: "rgba(66,133,244,0.15)",
+            color: "text-blue-400",
+            borderColor: "border-white/[0.06]",
             borderHover: "hover:border-blue-400/40",
+            glow: "rgba(66,133,244,0.08)",
             recommended: false,
         },
         github: {
             icon: <Github className="w-5 h-5 text-white" />,
             label: "GitHub",
             desc: mode === "signup" ? "Sync your dev profile" : "Sign in with GitHub",
-            gradient: "from-zinc-400 to-zinc-500",
-            glow: "rgba(255,255,255,0.08)",
+            color: "text-zinc-300",
+            borderColor: "border-white/[0.06]",
             borderHover: "hover:border-zinc-400/40",
+            glow: "rgba(255,255,255,0.05)",
             recommended: false,
         },
     };
@@ -125,19 +128,17 @@ function AuthButton({
             whileTap={{ scale: 0.99 }}
             onClick={onClick}
             disabled={isLoading}
-            className={`w-full relative group flex items-center gap-4 p-4 rounded-xl border border-white/[0.08] ${c.borderHover} bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`w-full relative group flex items-center gap-4 p-4 border ${c.borderColor} ${c.borderHover} bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed font-mono`}
         >
-            {/* Hover glow */}
-            <div
-                className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none"
-                style={{ background: `radial-gradient(ellipse, ${c.glow}, transparent 70%)` }}
-            />
+            {/* Corner brackets on hover */}
+            <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+            <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+            <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
 
             {/* Icon */}
-            <div className={`w-11 h-11 rounded-lg bg-gradient-to-br ${c.gradient} p-[1px] flex-shrink-0 relative z-10`}>
-                <div className="w-full h-full rounded-lg bg-[#080c14] flex items-center justify-center">
-                    {c.icon}
-                </div>
+            <div className={`w-11 h-11 border ${c.borderColor} bg-[#080c14] flex items-center justify-center flex-shrink-0 relative z-10`}>
+                {c.icon}
             </div>
 
             {/* Label */}
@@ -145,7 +146,7 @@ function AuthButton({
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-white">{c.label}</span>
                     {c.recommended && (
-                        <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-neon-green/10 text-neon-green border border-neon-green/20">
+                        <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-neon-green/10 text-neon-green border border-neon-green/20">
                             Recommended
                         </span>
                     )}
@@ -154,7 +155,7 @@ function AuthButton({
             </div>
 
             {/* Arrow */}
-            <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-white group-hover:translate-x-0.5 transition-all relative z-10" />
+            <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-neon-green group-hover:translate-x-0.5 transition-all relative z-10" />
         </motion.button>
     );
 }
@@ -174,19 +175,17 @@ function LinkedAccount({
     onLink: () => void;
 }) {
     const config = {
-        wallet: { icon: <Wallet className="w-4 h-4" />, label: "Solana Wallet", gradient: "from-neon-green to-emerald-400" },
-        google: { icon: <GoogleIcon className="w-4 h-4" />, label: "Google", gradient: "from-blue-500 to-blue-400" },
-        github: { icon: <Github className="w-4 h-4 text-white" />, label: "GitHub", gradient: "from-zinc-400 to-zinc-500" },
+        wallet: { icon: <Wallet className="w-4 h-4" />, label: "Solana Wallet", color: "text-neon-green" },
+        google: { icon: <GoogleIcon className="w-4 h-4" />, label: "Google", color: "text-blue-400" },
+        github: { icon: <Github className="w-4 h-4 text-white" />, label: "GitHub", color: "text-zinc-300" },
     };
 
     const c = config[method];
 
     return (
-        <div className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${linked ? "border-neon-green/20 bg-neon-green/[0.03]" : "border-white/[0.06] bg-white/[0.01]"}`}>
-            <div className={`w-8 h-8 rounded-md bg-gradient-to-br ${c.gradient} p-[1px] flex-shrink-0`}>
-                <div className="w-full h-full rounded-md bg-[#080c14] flex items-center justify-center">
-                    {c.icon}
-                </div>
+        <div className={`flex items-center gap-3 p-3 border transition-all font-mono ${linked ? "border-neon-green/20 bg-neon-green/[0.03]" : "border-white/[0.06] bg-white/[0.01]"}`}>
+            <div className={`w-8 h-8 border border-white/10 bg-[#080c14] flex items-center justify-center flex-shrink-0`}>
+                {c.icon}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -209,7 +208,7 @@ function LinkedAccount({
             ) : (
                 <button
                     onClick={onLink}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/[0.08] text-[10px] font-bold text-white transition-all"
+                    className="flex items-center gap-1 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/[0.08] hover:border-neon-green/30 text-[10px] font-bold text-white transition-all font-mono"
                 >
                     <Link2 className="w-3 h-3" />
                     Link
@@ -228,7 +227,7 @@ function AccountLinkingPanel() {
 
     const walletLinked = connected;
     const googleLinked = !!session;
-    const githubLinked = isAuthenticated && !session; // If authenticated but no Google session, likely GitHub
+    const githubLinked = isAuthenticated && !session;
 
     const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
     const GITHUB_REDIRECT_URI = typeof window !== "undefined"
@@ -236,13 +235,14 @@ function AccountLinkingPanel() {
         : "";
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 font-mono">
             <div className="space-y-1">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                     <Link2 className="w-5 h-5 text-neon-cyan" />
                     Link Your Accounts
                 </h3>
                 <p className="text-sm text-zinc-500">
+                    <span className="text-neon-green/40">// </span>
                     Connect multiple auth methods. Use any of them to sign in.
                 </p>
             </div>
@@ -272,7 +272,7 @@ function AccountLinkingPanel() {
                 <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-400/[0.05] border border-amber-400/20"
+                    className="flex items-start gap-2.5 p-3 bg-amber-400/[0.05] border border-amber-400/20"
                 >
                     <Shield className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                     <div>
@@ -289,7 +289,7 @@ function AccountLinkingPanel() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-2.5 p-3 rounded-lg bg-neon-green/[0.05] border border-neon-green/20"
+                    className="flex items-center gap-2.5 p-3 bg-neon-green/[0.05] border border-neon-green/20"
                 >
                     <Check className="w-4 h-4 text-neon-green" />
                     <span className="text-[11px] text-neon-green font-bold">All accounts linked! You can sign in with any method.</span>
@@ -302,7 +302,7 @@ function AccountLinkingPanel() {
                     href="/dashboard"
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-neon-green to-emerald-400 text-black text-sm font-black hover:brightness-110 transition-all"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-neon-green text-black text-sm font-black font-mono uppercase tracking-wider hover:bg-neon-green/90 hover:shadow-[0_0_30px_rgba(0,255,163,0.2)] transition-all"
                 >
                     Continue to Dashboard
                     <ArrowRight className="w-4 h-4" />
@@ -322,14 +322,22 @@ function SidebarStats() {
                 transition={{ delay: 0.3 }}
                 className="space-y-4"
             >
-                <h2 className="text-3xl xl:text-4xl font-black text-white tracking-tight leading-tight">
+                {/* Terminal heading */}
+                <div className="flex items-center gap-3">
+                    <span className="text-neon-green font-mono text-sm">{">"}</span>
+                    <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                        system_status
+                    </span>
+                    <div className="w-2 h-2 bg-neon-green animate-pulse" />
+                </div>
+
+                <h2 className="text-3xl xl:text-4xl font-black font-mono text-white tracking-tight leading-tight">
                     Join{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-cyan">
-                        12,400+
-                    </span>{" "}
+                    <span className="text-neon-green">12,400+</span>{" "}
                     builders leveling up.
                 </h2>
-                <p className="text-zinc-500 text-sm leading-relaxed max-w-sm">
+                <p className="text-zinc-500 text-sm leading-relaxed max-w-sm font-mono">
+                    <span className="text-neon-green/40">// </span>
                     Complete quests, earn XP, unlock soulbound loot, and climb the leaderboard.
                 </p>
             </motion.div>
@@ -347,8 +355,12 @@ function SidebarStats() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + i * 0.1 }}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]"
+                        className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.04] font-mono group relative"
                     >
+                        {/* Corner brackets on hover */}
+                        <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+
                         <stat.icon className={`w-4 h-4 ${stat.color}`} />
                         <div className="flex-1">
                             <div className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold">{stat.label}</div>
@@ -363,24 +375,30 @@ function SidebarStats() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
-                className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3"
+                className="p-4 bg-white/[0.02] border border-white/[0.06] space-y-3 relative"
             >
-                <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">
-                    🎮 Your journey begins
+                {/* Corner brackets */}
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/20" />
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-neon-green/20" />
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-neon-green/20" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-neon-green/20" />
+
+                <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold font-mono">
+                    <span className="text-neon-green/40">$ </span>player --new
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-green/20 to-neon-purple/20 border border-white/10 flex items-center justify-center text-xl">
+                    <div className="w-12 h-12 border border-white/10 bg-white/[0.02] flex items-center justify-center text-xl">
                         🧑‍💻
                     </div>
-                    <div>
+                    <div className="font-mono">
                         <div className="text-sm font-bold text-white">New Player</div>
                         <div className="text-[10px] text-zinc-500">Level 1 • 0 XP • No streak</div>
                     </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                    <div className="h-full w-0 rounded-full bg-gradient-to-r from-neon-green to-neon-cyan" />
+                <div className="h-1.5 bg-white/5 overflow-hidden">
+                    <div className="h-full w-0 bg-neon-green" />
                 </div>
-                <div className="text-[10px] text-zinc-600 text-center">Sign up to activate your player card</div>
+                <div className="text-[10px] text-zinc-600 text-center font-mono">Sign up to activate your player card</div>
             </motion.div>
         </div>
     );
@@ -421,21 +439,15 @@ function AuthPageContent() {
                     setIsLoading(true);
                     setAuthError(null);
 
-                    // 1. Request nonce from backend
                     const nonceResult = await walletGetNonce(publicKey.toBase58());
-
-                    // 2. Sign the message
                     const message = new TextEncoder().encode(nonceResult.message);
                     const signature = await signMessage(message);
-
-                    // 3. Send signature to backend for verification
                     const authResult = await walletVerify(
                         publicKey.toBase58(),
                         Array.from(signature),
                         nonceResult.nonce
                     );
 
-                    // 4. Store JWT — redirect handled by useEffect above
                     login(authResult.token, authResult.user);
                     setIsLoading(false);
                 } catch (err) {
@@ -479,7 +491,6 @@ function AuthPageContent() {
             if (!connected) {
                 setVisible(true);
             } else {
-                // Already connected — trigger nonce+sign flow
                 if (publicKey && signMessage) {
                     (async () => {
                         try {
@@ -526,8 +537,9 @@ function AuthPageContent() {
         <div className="min-h-screen bg-[#020408] flex relative overflow-hidden">
             {/* Background effects */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-neon-green/5 rounded-full blur-[150px]" />
-                <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-neon-purple/5 rounded-full blur-[120px]" />
+                <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-neon-green/5 blur-[150px]" />
+                <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-neon-purple/5 blur-[120px]" />
+                {/* Grid */}
                 <div
                     className="absolute inset-0 opacity-[0.03]"
                     style={{
@@ -535,6 +547,10 @@ function AuthPageContent() {
                         backgroundSize: "60px 60px",
                     }}
                 />
+                {/* Scanlines */}
+                <div className="absolute inset-0 opacity-[0.02]" style={{
+                    backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,163,0.08) 2px, rgba(0,255,163,0.08) 4px)",
+                }} />
             </div>
 
             {/* Left: Stats sidebar */}
@@ -553,10 +569,10 @@ function AuthPageContent() {
                     >
                         <Link
                             href="/"
-                            className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors group"
+                            className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-neon-green transition-colors group font-mono"
                         >
                             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                            Back to Home
+                            cd ../home
                         </Link>
                     </motion.div>
 
@@ -568,18 +584,18 @@ function AuthPageContent() {
                     >
                         {/* Header */}
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <motion.div
-                                    animate={{ rotate: [0, 10, -10, 0] }}
-                                    transition={{ duration: 3, repeat: Infinity }}
-                                >
-                                    <Sparkles className="w-6 h-6 text-neon-green" />
-                                </motion.div>
-                                <h1 className="text-2xl md:text-3xl font-black text-white">
-                                    {mode === "signup" ? "Start Your Quest" : "Welcome Back"}
-                                </h1>
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className="text-neon-green font-mono text-sm">{">"}</span>
+                                <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                                    {mode === "signup" ? "new_player" : "returning_player"}
+                                </span>
+                                <div className="flex-1 h-px bg-white/[0.06]" />
                             </div>
-                            <p className="text-sm text-zinc-500">
+                            <h1 className="text-2xl md:text-3xl font-black text-white font-mono">
+                                {mode === "signup" ? "Start Your Quest" : "Welcome Back"}
+                            </h1>
+                            <p className="text-sm text-zinc-500 font-mono">
+                                <span className="text-neon-green/40">// </span>
                                 {mode === "signup"
                                     ? "Create your account to earn XP, unlock achievements, and build on Solana."
                                     : "Sign in with any linked auth method to continue your journey."}
@@ -592,7 +608,7 @@ function AuthPageContent() {
 
                             <div className="flex items-center gap-3">
                                 <div className="flex-1 h-px bg-white/[0.06]" />
-                                <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">or continue with</span>
+                                <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold font-mono">or continue with</span>
                                 <div className="flex-1 h-px bg-white/[0.06]" />
                             </div>
 
@@ -607,11 +623,11 @@ function AuthPageContent() {
                             <motion.div
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="flex items-start gap-2.5 p-3 rounded-lg bg-red-500/[0.05] border border-red-500/20"
+                                className="flex items-start gap-2.5 p-3 bg-red-500/[0.05] border border-red-500/20 font-mono"
                             >
                                 <Shield className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <div className="text-[11px] font-bold text-red-400">Authentication failed</div>
+                                    <div className="text-[11px] font-bold text-red-400">ERROR: Authentication failed</div>
                                     <div className="text-[10px] text-zinc-500 mt-0.5">{authError}</div>
                                 </div>
                             </motion.div>
@@ -621,7 +637,7 @@ function AuthPageContent() {
                         {mode === "signup" && <SignupBonuses />}
 
                         {/* Toggle mode */}
-                        <div className="text-center text-sm text-zinc-500">
+                        <div className="text-center text-sm text-zinc-500 font-mono">
                             {mode === "signup" ? (
                                 <>
                                     Already have an account?{" "}
@@ -646,11 +662,11 @@ function AuthPageContent() {
                         </div>
 
                         {/* Terms */}
-                        <p className="text-[10px] text-zinc-700 text-center leading-relaxed">
+                        <p className="text-[10px] text-zinc-700 text-center leading-relaxed font-mono">
                             By continuing, you agree to our{" "}
-                            <a href="#" className="text-zinc-500 underline hover:text-white transition-colors">Terms of Service</a>
+                            <a href="#" className="text-zinc-500 underline hover:text-neon-green transition-colors">Terms of Service</a>
                             {" "}and{" "}
-                            <a href="#" className="text-zinc-500 underline hover:text-white transition-colors">Privacy Policy</a>.
+                            <a href="#" className="text-zinc-500 underline hover:text-neon-green transition-colors">Privacy Policy</a>.
                         </p>
                     </motion.div>
                 </div>

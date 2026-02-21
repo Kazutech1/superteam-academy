@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { AuthButton } from "@/components/ui/auth-button";
+
 import { Hexagon, Menu, X } from "lucide-react";
 import { motion, AnimatePresence, useMotionValueEvent, useScroll } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 
 const navLinks = [
     { href: "/auth", label: "Courses" },
@@ -13,6 +13,51 @@ const navLinks = [
     { href: "/auth", label: "Credentials" },
     { href: "/auth", label: "Dashboard" },
 ];
+
+/* ─── Nav Hacker Button (text scramble CTA) ─── */
+const GLITCH_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?/~`0123456789ABCDEF";
+
+function NavHackerButton({ text }: { text: string }) {
+    const [displayText, setDisplayText] = useState(text);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const scramble = useCallback(() => {
+        let iteration = 0;
+        const original = text;
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => {
+            setDisplayText(
+                original
+                    .split("")
+                    .map((char, idx) => {
+                        if (idx < iteration) return original[idx];
+                        return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+                    })
+                    .join("")
+            );
+            if (iteration >= original.length) {
+                if (intervalRef.current) clearInterval(intervalRef.current);
+            }
+            iteration += 1 / 2;
+        }, 40);
+    }, [text]);
+
+    const reset = useCallback(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setDisplayText(text);
+    }, [text]);
+
+    return (
+        <Button
+            variant="neon"
+            className="btn-hacker font-mono font-semibold uppercase tracking-widest relative overflow-hidden"
+            onMouseEnter={scramble}
+            onMouseLeave={reset}
+        >
+            {displayText}
+        </Button>
+    );
+}
 
 export function Navigation() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -29,19 +74,19 @@ export function Navigation() {
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
-                    ? "bg-[#020408]/80 backdrop-blur-xl border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
-                    : "bg-transparent"
+                className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ${isScrolled
+                    ? "top-4 w-[92%] max-w-5xl bg-[#020408]/70 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,255,163,0.05)]"
+                    : "top-0 w-full bg-transparent"
                     }`}
             >
-                <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+                <div className={`mx-auto px-4 md:px-6 flex items-center justify-between transition-all duration-500 ${isScrolled ? "h-14" : "h-16 md:h-20"}`}>
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2.5 group">
                         <div className="relative">
-                            <div className="absolute inset-0 bg-neon-green/30 blur-lg rounded-full group-hover:bg-neon-green/50 transition-all duration-300" />
+                            <div className="absolute inset-0 bg-neon-green/30 blur-lg group-hover:bg-neon-green/50 transition-all duration-300" />
                             <Hexagon className="w-8 h-8 text-neon-green relative z-10 fill-neon-green/10 group-hover:scale-110 transition-transform duration-300" />
                         </div>
-                        <span className="font-bold text-xl tracking-tighter">
+                        <span className="font-mono font-bold text-xl tracking-tighter">
                             SUPERTEAM{" "}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-cyan">
                                 ACADEMY
@@ -50,39 +95,29 @@ export function Navigation() {
                     </Link>
 
                     {/* Desktop Nav */}
-                    <nav className="hidden md:flex items-center gap-1">
+                    <nav className="hidden md:flex items-center gap-0">
                         {navLinks.map((link) => (
                             <Link
-                                key={link.href}
+                                key={link.label}
                                 href={link.href}
-                                className="relative px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors group"
+                                className="btn-slide-right relative px-4 py-2 text-sm font-mono font-medium text-zinc-400 hover:text-white transition-colors duration-300 overflow-hidden uppercase tracking-wider border border-transparent hover:border-white/[0.08]"
                             >
-                                {link.label}
-                                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-neon-green to-neon-cyan group-hover:w-full transition-all duration-300" />
+                                <span className="relative z-10">{link.label}</span>
                             </Link>
                         ))}
                     </nav>
 
                     {/* Desktop CTA */}
                     <div className="hidden md:flex items-center gap-3">
-                        <div className="text-zinc-400 hover:text-white hover:bg-white/5 rounded-md transition-colors">
-                            <AuthButton />
-                        </div>
                         <Link href="/auth">
-                            <Button
-                                variant="neon"
-                                className="font-semibold relative overflow-hidden group"
-                            >
-                                <span className="relative z-10">Start Building</span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-neon-green/20 to-neon-cyan/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </Button>
+                            <NavHackerButton text="Start Building" />
                         </Link>
                     </div>
 
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMobileOpen(!isMobileOpen)}
-                        className="md:hidden relative z-50 p-2 text-zinc-400 hover:text-white transition-colors"
+                        className="md:hidden relative z-50 p-2 text-zinc-400 hover:text-neon-green transition-colors"
                     >
                         {isMobileOpen ? (
                             <X className="w-6 h-6" />
@@ -112,11 +147,11 @@ export function Navigation() {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                            className="absolute right-0 top-0 bottom-0 w-72 bg-[#0a0f1a] border-l border-white/10 p-6 pt-24 flex flex-col gap-2"
+                            className="absolute right-0 top-0 bottom-0 w-72 bg-[#0a0f1a] border-l border-white/10 p-6 pt-24 flex flex-col gap-1"
                         >
                             {navLinks.map((link, i) => (
                                 <motion.div
-                                    key={link.href}
+                                    key={link.label}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.05 + 0.1 }}
@@ -124,18 +159,15 @@ export function Navigation() {
                                     <Link
                                         href={link.href}
                                         onClick={() => setIsMobileOpen(false)}
-                                        className="block px-4 py-3 text-lg font-medium text-zinc-300 hover:text-neon-green rounded-lg hover:bg-white/5 transition-all"
+                                        className="btn-slide-right relative block px-4 py-3 text-lg font-mono font-medium text-zinc-300 hover:text-white hover:bg-transparent border border-transparent hover:border-white/[0.08] transition-all overflow-hidden uppercase tracking-wider"
                                     >
-                                        {link.label}
+                                        <span className="relative z-10">{link.label}</span>
                                     </Link>
                                 </motion.div>
                             ))}
                             <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
-                                <div className="w-full">
-                                    <AuthButton />
-                                </div>
                                 <Link href="/auth" onClick={() => setIsMobileOpen(false)} className="block w-full">
-                                    <Button variant="neon" className="w-full font-semibold">
+                                    <Button variant="neon" className="btn-hacker w-full font-mono font-semibold uppercase tracking-widest">
                                         Start Building
                                     </Button>
                                 </Link>

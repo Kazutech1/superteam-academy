@@ -130,12 +130,21 @@ function renderContent(md: string) {
         if (line.trim().startsWith("```")) {
             if (codeBlock !== null) {
                 elements.push(
-                    <div key={`code-${i}`} className="my-4 rounded-xl border border-white/[0.06] bg-[#0a0f1a] overflow-hidden">
-                        <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-white/[0.02]">
-                            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">{codeLanguage || "code"}</span>
-                            <button className="text-zinc-500 hover:text-white transition-colors"><Copy className="w-3.5 h-3.5" /></button>
+                    <div key={`code-${i}`} className="my-6 border border-white/[0.08] bg-[#0a0f1a] overflow-hidden relative group">
+                        {/* Corner brackets */}
+                        <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/30" />
+                        <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-green/30" />
+
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.08] bg-white/[0.02]">
+                            <span className="text-[10px] text-zinc-500 font-black font-mono uppercase tracking-widest">
+                                <span className="text-neon-green/40">$ </span>
+                                {codeLanguage || "code"}
+                            </span>
+                            <button className="text-zinc-500 hover:text-neon-green transition-colors">
+                                <Copy className="w-3.5 h-3.5" />
+                            </button>
                         </div>
-                        <pre className="p-4 text-sm text-zinc-300 overflow-x-auto font-mono leading-relaxed">
+                        <pre className="p-4 text-[13px] text-zinc-300 overflow-x-auto font-mono leading-relaxed bg-[#050810]">
                             <code>{codeBlock.join("\n")}</code>
                         </pre>
                     </div>
@@ -150,34 +159,71 @@ function renderContent(md: string) {
         if (codeBlock !== null) { codeBlock.push(line); return; }
 
         // headings
-        if (line.startsWith("# ")) { elements.push(<h1 key={i} className="text-2xl font-black text-white mt-8 mb-4">{line.slice(2)}</h1>); return; }
-        if (line.startsWith("## ")) { elements.push(<h2 key={i} className="text-xl font-black text-white mt-6 mb-3">{line.slice(3)}</h2>); return; }
-        if (line.startsWith("### ")) { elements.push(<h3 key={i} className="text-lg font-bold text-white mt-4 mb-2">{line.slice(4)}</h3>); return; }
+        if (line.startsWith("# ")) {
+            elements.push(
+                <div key={i} className="mt-12 mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-neon-green font-mono text-sm">{">"}</span>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">core_module</span>
+                        <div className="flex-1 h-px bg-white/[0.06]" />
+                    </div>
+                    <h1 className="text-3xl font-black text-white font-mono tracking-tight">{line.slice(2)}</h1>
+                </div>
+            );
+            return;
+        }
+        if (line.startsWith("## ")) {
+            elements.push(
+                <h2 key={i} className="text-xl font-black text-white mt-10 mb-4 font-mono flex items-center gap-2">
+                    <span className="text-neon-cyan/40">#</span> {line.slice(3)}
+                </h2>
+            );
+            return;
+        }
+        if (line.startsWith("### ")) {
+            elements.push(
+                <h3 key={i} className="text-lg font-bold text-white mt-6 mb-3 font-mono flex items-center gap-2">
+                    <span className="text-neon-purple/40">##</span> {line.slice(4)}
+                </h3>
+            );
+            return;
+        }
 
         // blockquote
         if (line.startsWith("> ")) {
             elements.push(
-                <div key={i} className="my-3 pl-4 border-l-2 border-neon-green/40 text-sm text-zinc-400 italic">{line.slice(2)}</div>
+                <div key={i} className="my-6 p-4 border border-neon-green/20 bg-neon-green/5 font-mono relative">
+                    <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/40" />
+                    <div className="text-sm text-zinc-300 leading-relaxed italic">
+                        <span className="text-neon-green/60 font-black not-italic mr-2">TIP //</span>
+                        {line.slice(2).replace("**💡 Tip:**", "").trim()}
+                    </div>
+                </div>
             );
             return;
         }
 
         // numbered list
         if (/^\d+\.\s/.test(line.trim())) {
-            elements.push(<li key={i} className="text-sm text-zinc-300 ml-4 mb-1 list-decimal leading-relaxed">{line.replace(/^\d+\.\s/, "")}</li>);
+            elements.push(
+                <li key={i} className="text-sm text-zinc-400 ml-4 mb-2 list-none font-mono flex items-start gap-3">
+                    <span className="text-neon-cyan shrink-0 font-black">{line.match(/^\d+/)?.[0].padStart(2, '0')}</span>
+                    <span className="leading-relaxed">{line.replace(/^\d+\.\s/, "")}</span>
+                </li>
+            );
             return;
         }
 
         // empty line
-        if (line.trim() === "") { elements.push(<div key={i} className="h-2" />); return; }
+        if (line.trim() === "") { elements.push(<div key={i} className="h-4" />); return; }
 
         // paragraph — handle inline code
         const parts = line.split(/(`[^`]+`)/g);
         elements.push(
-            <p key={i} className="text-sm text-zinc-400 leading-relaxed mb-2">
+            <p key={i} className="text-sm text-zinc-400 leading-relaxed mb-4 font-mono">
                 {parts.map((part, j) =>
                     part.startsWith("`") && part.endsWith("`")
-                        ? <code key={j} className="px-1.5 py-0.5 rounded bg-white/[0.06] text-neon-cyan text-xs font-mono">{part.slice(1, -1)}</code>
+                        ? <code key={j} className="px-1.5 py-0.5 border border-neon-cyan/20 bg-neon-cyan/5 text-neon-cyan text-[11px] font-mono mx-0.5">{part.slice(1, -1)}</code>
                         : <span key={j}>{part}</span>
                 )}
             </p>
@@ -249,28 +295,28 @@ export default function LessonPage() {
 
             {/* Top Bar */}
             <header className="shrink-0 z-20 border-b border-white/[0.06] bg-[#020408]">
-                <div className="px-4 h-12 flex items-center justify-between gap-4">
+                <div className="px-4 h-12 flex items-center justify-between gap-4 font-mono">
                     <div className="flex items-center gap-3 min-w-0">
-                        <Link href={`/courses/${slug}`} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors shrink-0 group">
+                        <Link href={`/courses/${slug}`} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-neon-green transition-colors shrink-0 group">
                             <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                            Back
+                            cd ../
                         </Link>
                         <div className="h-4 w-px bg-white/10" />
-                        <span className="text-[10px] text-zinc-600 truncate">{lesson.course.title}</span>
+                        <span className="text-[10px] text-zinc-600 truncate uppercase tracking-wider">{lesson.course.title}</span>
                         <ChevronRight className="w-3 h-3 text-zinc-700 shrink-0" />
-                        <span className="text-[10px] text-zinc-500 truncate">{lesson.milestone.title}</span>
+                        <span className="text-[10px] text-zinc-500 truncate uppercase tracking-wider">{lesson.milestone.title}</span>
                         <ChevronRight className="w-3 h-3 text-zinc-700 shrink-0" />
-                        <span className="text-xs text-white font-bold truncate">{lesson.title}</span>
+                        <span className="text-xs text-white font-black truncate uppercase tracking-widest">{lesson.title}</span>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => setShowSidebar(!showSidebar)}
-                            className="p-2 rounded-lg hover:bg-white/5 transition-colors text-zinc-500 hover:text-white"
+                            className="p-2 border border-white/5 hover:bg-white/5 transition-colors text-zinc-500 hover:text-white"
                         >
                             <List className="w-4 h-4" />
                         </button>
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neon-green/10 text-neon-green text-[10px] font-bold">
+                        <span className="flex items-center gap-1.5 px-3 py-1 bg-neon-green/10 border border-neon-green/20 text-neon-green text-[10px] font-black uppercase tracking-wider">
                             <Zap className="w-3 h-3" /> +{lesson.xpReward} XP
                         </span>
                     </div>
@@ -281,8 +327,13 @@ export default function LessonPage() {
             <div className="flex-1 flex overflow-hidden relative">
 
                 {/* ── Left: Content ── */}
-                <div className="overflow-y-auto" style={{ width: `${splitPercent}%` }}>
-                    <div className="max-w-3xl mx-auto px-8 py-8">
+                <div className="overflow-y-auto bg-[#020408] relative" style={{ width: `${splitPercent}%` }}>
+                    {/* Background Scanlines */}
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.015]" style={{
+                        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,163,0.08) 2px, rgba(0,255,163,0.08) 4px)",
+                    }} />
+
+                    <div className="max-w-3xl mx-auto px-10 py-10 relative z-10">
                         {renderContent(lesson.content)}
 
                         {/* Challenge toggle */}
@@ -291,27 +342,40 @@ export default function LessonPage() {
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
                                 onClick={() => setShowChallenge(!showChallenge)}
-                                className="mt-8 w-full flex items-center gap-3 p-4 rounded-xl border border-neon-green/20 bg-neon-green/5 hover:bg-neon-green/10 transition-all text-left"
+                                className="mt-12 w-full flex items-center gap-4 p-5 border border-neon-green/20 bg-neon-green/5 hover:bg-neon-green/10 transition-all text-left group relative"
                             >
-                                <Code2 className="w-5 h-5 text-neon-green shrink-0" />
-                                <div className="flex-1">
-                                    <div className="text-sm font-bold text-white">{lesson.challenge.title}</div>
-                                    <div className="text-[10px] text-zinc-500">Complete the challenge to earn +{lesson.challenge.xp} XP</div>
+                                <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-green/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                <div className="w-12 h-12 border border-neon-green/20 flex items-center justify-center bg-neon-green/5 text-neon-green shrink-0">
+                                    <Code2 className="w-6 h-6" />
                                 </div>
-                                <ChevronRight className={`w-4 h-4 text-neon-green transition-transform ${showChallenge ? "rotate-90" : ""}`} />
+                                <div className="flex-1 font-mono">
+                                    <div className="text-sm font-black text-white uppercase tracking-wider">{lesson.challenge.title}</div>
+                                    <div className="text-[10px] text-zinc-500 mt-0.5">
+                                        <span className="text-neon-green/40">$ </span>
+                                        run --challenge --reward={lesson.challenge.xp}xp
+                                    </div>
+                                </div>
+                                <ChevronRight className={`w-5 h-5 text-neon-green transition-transform ${showChallenge ? "rotate-90" : ""}`} />
                             </motion.button>
                         )}
 
                         {/* Hint */}
-                        <div className="mt-6">
-                            <button onClick={() => setShowHint(!showHint)} className="flex items-center gap-2 text-xs text-zinc-500 hover:text-amber-400 transition-colors">
-                                <Lightbulb className="w-3.5 h-3.5" /> {showHint ? "Hide Hint" : "Show Hint"}
+                        <div className="mt-8">
+                            <button onClick={() => setShowHint(!showHint)} className="flex items-center gap-2 text-xs text-zinc-600 hover:text-amber-400 transition-colors font-mono">
+                                <span className="text-neon-green/40">$ </span>
+                                {showHint ? "hide_hint" : "show_hint"}
                             </button>
                             <AnimatePresence>
                                 {showHint && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                                        <div className="mt-3 p-4 rounded-xl bg-amber-400/5 border border-amber-400/10 text-xs text-amber-300/80 leading-relaxed">
-                                            💡 Remember that <code className="px-1 py-0.5 bg-white/5 rounded text-amber-300 font-mono text-[11px]">SystemProgram.transfer()</code> accepts an object with <code className="px-1 py-0.5 bg-white/5 rounded text-amber-300 font-mono text-[11px]">fromPubkey</code>, <code className="px-1 py-0.5 bg-white/5 rounded text-amber-300 font-mono text-[11px]">toPubkey</code>, and <code className="px-1 py-0.5 bg-white/5 rounded text-amber-300 font-mono text-[11px]">lamports</code> fields.
+                                        <div className="mt-4 p-5 border border-amber-400/20 bg-amber-400/5 font-mono relative">
+                                            <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-amber-400/40" />
+                                            <div className="text-[11px] text-amber-300/80 leading-relaxed">
+                                                <span className="text-amber-400 font-black mr-2">HINT //</span>
+                                                Remember that <code className="px-1 py-0.5 border border-amber-400/20 bg-amber-400/10 text-amber-300 font-mono text-[11px]">SystemProgram.transfer()</code> accepts an object with <code className="px-1 py-0.5 border border-amber-400/20 bg-amber-400/10 text-amber-300 font-mono text-[11px]">fromPubkey</code>, <code className="px-1 py-0.5 border border-amber-400/20 bg-amber-400/10 text-amber-300 font-mono text-[11px]">toPubkey</code>, and <code className="px-1 py-0.5 border border-amber-400/20 bg-amber-400/10 text-amber-300 font-mono text-[11px]">lamports</code> fields.
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
@@ -319,102 +383,125 @@ export default function LessonPage() {
                         </div>
 
                         {/* Nav */}
-                        <div className="flex items-center justify-between mt-10 pt-6 border-t border-white/[0.05]">
+                        <div className="flex items-center justify-between mt-16 pt-8 border-t border-white/[0.08] font-mono">
                             {lesson.prev ? (
-                                <Link href={`/courses/${slug}/lessons/${lesson.prev.id}`} className="flex items-center gap-2 text-xs text-zinc-500 hover:text-white transition-colors group">
-                                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                                    {lesson.prev.title}
+                                <Link href={`/courses/${slug}/lessons/${lesson.prev.id}`} className="flex flex-col items-start gap-1 group">
+                                    <span className="text-[9px] text-zinc-600 uppercase tracking-widest group-hover:text-neon-green transition-colors">Previous Module</span>
+                                    <div className="flex items-center gap-2 text-xs text-zinc-400 group-hover:text-white transition-colors">
+                                        <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                                        {lesson.prev.title}
+                                    </div>
                                 </Link>
                             ) : <div />}
                             {lesson.next ? (
-                                <Link href={`/courses/${slug}/lessons/${lesson.next.id}`} className="flex items-center gap-2 text-xs text-zinc-500 hover:text-white transition-colors group">
-                                    {lesson.next.title}
-                                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                <Link href={`/courses/${slug}/lessons/${lesson.next.id}`} className="flex flex-col items-end gap-1 group text-right">
+                                    <span className="text-[9px] text-zinc-600 uppercase tracking-widest group-hover:text-neon-cyan transition-colors">Next Module</span>
+                                    <div className="flex items-center gap-2 text-xs text-zinc-400 group-hover:text-white transition-colors">
+                                        {lesson.next.title}
+                                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                                    </div>
                                 </Link>
                             ) : <div />}
                         </div>
 
-                        <div className="h-12" />
+                        <div className="h-20" />
                     </div>
                 </div>
 
                 {/* ── Drag divider ── */}
                 <div
                     onMouseDown={handleMouseDown}
-                    className="w-1.5 shrink-0 cursor-col-resize bg-white/[0.04] hover:bg-neon-green/20 active:bg-neon-green/40 transition-colors z-10"
+                    className="w-[2px] shrink-0 cursor-col-resize bg-white/[0.06] hover:bg-neon-green/30 active:bg-neon-green/60 transition-colors z-10"
                 />
 
                 {/* ── Right: Code editor / Challenge ── */}
-                <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0f1a]">
+                <div className="flex-1 flex flex-col overflow-hidden bg-[#050810] relative">
+                    {/* Editor Background Grain */}
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+
                     {showChallenge && lesson.hasChallenge ? (
                         <>
                             {/* Challenge header */}
-                            <div className="shrink-0 px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
+                            <div className="shrink-0 px-4 py-3 border-b border-white/[0.08] bg-[#080c14] flex items-center justify-between font-mono relative z-10">
                                 <div className="flex items-center gap-2">
-                                    <Code2 className="w-4 h-4 text-neon-green" />
-                                    <span className="text-xs font-bold text-white">{lesson.challenge.title}</span>
+                                    <Terminal className="w-4 h-4 text-neon-green" />
+                                    <span className="text-xs font-black text-white uppercase tracking-wider">{lesson.challenge.title}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={resetCode} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors" title="Reset code">
+                                    <button onClick={resetCode} className="p-1.5 border border-white/5 hover:bg-white/5 text-zinc-500 hover:text-white transition-colors" title="Reset code">
                                         <RotateCcw className="w-3.5 h-3.5" />
                                     </button>
-                                    <button onClick={() => setShowChallenge(false)} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
+                                    <button onClick={() => setShowChallenge(false)} className="p-1.5 border border-white/5 hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
                                         <X className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Challenge description */}
-                            <div className="shrink-0 px-4 py-3 border-b border-white/[0.06] bg-white/[0.01]">
-                                <p className="text-xs text-zinc-400 leading-relaxed">{lesson.challenge.description}</p>
+                            <div className="shrink-0 px-4 py-4 border-b border-white/[0.08] bg-[#050810]/50 relative z-10 font-mono">
+                                <div className="text-[11px] text-zinc-400 leading-relaxed">
+                                    <span className="text-neon-green/40">$ </span>
+                                    {lesson.challenge.description}
+                                </div>
                             </div>
 
                             {/* Code textarea */}
-                            <div className="flex-1 overflow-hidden relative">
+                            <div className="flex-1 overflow-hidden relative z-10 bg-transparent">
+                                <div className="absolute top-4 left-4 text-[10px] text-zinc-800 pointer-events-none font-mono tracking-widest">
+                                    {id}.ts [EDITABLE]
+                                </div>
                                 <textarea
                                     ref={textareaRef}
                                     value={code}
                                     onChange={(e) => setCode(e.target.value)}
                                     spellCheck={false}
-                                    className="w-full h-full p-4 bg-transparent text-sm text-zinc-300 font-mono resize-none focus:outline-none leading-relaxed placeholder:text-zinc-700"
+                                    className="w-full h-full p-6 pt-10 bg-transparent text-[13px] text-zinc-300 font-mono resize-none focus:outline-none leading-relaxed placeholder:text-zinc-800 scrollbar-thin scrollbar-thumb-white/5"
                                     placeholder="Write your code here..."
                                 />
                             </div>
 
                             {/* Test cases */}
-                            <div className="shrink-0 border-t border-white/[0.06]">
-                                <div className="px-4 py-2 flex items-center gap-2 border-b border-white/[0.04]">
-                                    <Terminal className="w-3.5 h-3.5 text-zinc-500" />
-                                    <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Test Cases</span>
+                            <div className="shrink-0 border-t border-white/[0.1] relative z-10 bg-[#080c14]">
+                                <div className="px-4 py-2 flex items-center gap-2 border-b border-white/[0.05]">
+                                    <List className="w-3.5 h-3.5 text-zinc-600" />
+                                    <span className="text-[10px] text-zinc-500 font-black font-mono uppercase tracking-[0.2em]">verification_status</span>
                                 </div>
-                                <div className="px-4 py-2 space-y-1.5 max-h-32 overflow-y-auto">
+                                <div className="px-4 py-3 space-y-2 max-h-32 overflow-y-auto font-mono">
                                     {testResults.map((tc) => (
-                                        <div key={tc.id} className="flex items-center gap-2 text-xs">
+                                        <div key={tc.id} className="flex items-center gap-3 text-[11px]">
                                             {tc.passed === null ? (
-                                                <div className="w-3.5 h-3.5 rounded-full border border-zinc-700" />
+                                                <div className="w-4 h-4 border border-zinc-800" />
                                             ) : tc.passed ? (
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-neon-green" />
+                                                <div className="w-4 h-4 border border-neon-green bg-neon-green/10 flex items-center justify-center">
+                                                    <CheckCircle2 className="w-3 h-3 text-neon-green" />
+                                                </div>
                                             ) : (
-                                                <X className="w-3.5 h-3.5 text-red-400" />
+                                                <div className="w-4 h-4 border border-red-500 bg-red-500/10 flex items-center justify-center">
+                                                    <X className="w-3 h-3 text-red-500" />
+                                                </div>
                                             )}
-                                            <span className={tc.passed === null ? "text-zinc-500" : tc.passed ? "text-neon-green" : "text-red-400"}>
-                                                {tc.name}
+                                            <span className={tc.passed === null ? "text-zinc-600" : tc.passed ? "text-neon-green" : "text-red-500"}>
+                                                {tc.passed === null ? "[WAITING]" : tc.passed ? "[PASSED]" : "[FAILED]"} {tc.name}
                                             </span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Output */}
+                            {/* Output console */}
                             <AnimatePresence>
                                 {output && (
                                     <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="shrink-0 border-t border-white/[0.06] px-4 py-3"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className={`shrink-0 border-t border-white/[0.1] px-4 py-3 bg-[#0a0f1a] relative z-10`}
                                     >
-                                        <p className={`text-xs font-mono ${challengeCompleted ? "text-neon-green" : "text-red-400"}`}>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className={`w-1.5 h-1.5 ${challengeCompleted ? "bg-neon-green" : "bg-red-500"} animate-pulse`} />
+                                            <span className="text-[9px] text-zinc-500 font-mono uppercase tracking-widest">system_output</span>
+                                        </div>
+                                        <p className={`text-xs font-mono font-bold ${challengeCompleted ? "text-neon-green" : "text-red-400"}`}>
                                             {output}
                                         </p>
                                     </motion.div>
@@ -422,43 +509,53 @@ export default function LessonPage() {
                             </AnimatePresence>
 
                             {/* Run / Complete bar */}
-                            <div className="shrink-0 px-4 py-3 border-t border-white/[0.06] flex items-center justify-between bg-white/[0.01]">
-                                <span className="flex items-center gap-1 text-[10px] text-neon-green font-bold">
-                                    <Zap className="w-3 h-3" /> +{lesson.challenge.xp} XP
-                                </span>
-                                <div className="flex items-center gap-2">
+                            <div className="shrink-0 px-4 py-4 border-t border-white/[0.1] bg-[#080c14] flex items-center justify-between relative z-10 font-mono">
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-zinc-600 uppercase tracking-widest">Expected Reward</span>
+                                    <span className="flex items-center gap-1.5 text-neon-green font-black text-xs uppercase">
+                                        <Zap className="w-3.5 h-3.5" /> +{lesson.challenge.xp} XP
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3">
                                     {challengeCompleted && (
                                         <motion.div
-                                            initial={{ opacity: 0, scale: 0.8 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-green/10 text-neon-green text-[10px] font-bold"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-neon-green/10 border border-neon-green/30 text-neon-green text-[10px] font-black uppercase tracking-wider"
                                         >
-                                            <Sparkles className="w-3.5 h-3.5" /> Challenge Complete!
+                                            <Sparkles className="w-3.5 h-3.5" /> Success
                                         </motion.div>
                                     )}
                                     <motion.button
-                                        whileHover={{ scale: 1.03 }}
-                                        whileTap={{ scale: 0.97 }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={runTests}
                                         disabled={isRunning}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-green to-emerald-400 text-black text-xs font-black disabled:opacity-50"
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-neon-green text-black text-xs font-black uppercase tracking-[0.1em] hover:bg-neon-green/90 transition-all shadow-[0_0_20px_rgba(0,255,163,0.1)] group disabled:opacity-50"
                                     >
-                                        {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                                        {isRunning ? "Running…" : "Run Tests"}
+                                        {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                                        {isRunning ? "Verifying…" : "Run Protocol"}
                                     </motion.button>
                                 </div>
                             </div>
                         </>
                     ) : (
                         /* Placeholder when no challenge active */
-                        <div className="flex-1 flex items-center justify-center">
-                            <div className="text-center space-y-3">
-                                <Code2 className="w-10 h-10 text-zinc-700 mx-auto" />
-                                <p className="text-xs text-zinc-600">
-                                    {lesson.hasChallenge
-                                        ? "Open the challenge from the lesson content to start coding"
-                                        : "No code challenge for this lesson"}
-                                </p>
+                        <div className="flex-1 flex items-center justify-center p-12 text-center font-mono">
+                            <div className="max-w-xs space-y-4">
+                                <div className="w-16 h-16 border border-white/5 bg-white/[0.02] flex items-center justify-center mx-auto relative group">
+                                    <Code2 className="w-8 h-8 text-zinc-800 transition-colors group-hover:text-zinc-600" />
+                                    <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10" />
+                                    <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/10" />
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-[11px] text-zinc-700 uppercase tracking-widest font-black">Waiting for Action</p>
+                                    <p className="text-[10px] text-zinc-800 leading-relaxed uppercase">
+                                        {lesson.hasChallenge
+                                            ? "$ open --challenge to begin development environment"
+                                            : "$ no_challenge --status=ready"}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -468,19 +565,22 @@ export default function LessonPage() {
                 <AnimatePresence>
                     {showSidebar && (
                         <>
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/50 z-30" onClick={() => setShowSidebar(false)} />
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 font-mono" onClick={() => setShowSidebar(false)} />
                             <motion.div
                                 initial={{ x: "100%" }}
                                 animate={{ x: 0 }}
                                 exit={{ x: "100%" }}
-                                transition={{ type: "spring", damping: 25, stiffness: 250 }}
-                                className="absolute right-0 top-0 bottom-0 w-72 bg-[#0a0f1a] border-l border-white/[0.06] z-40 overflow-y-auto"
+                                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                                className="absolute right-0 top-0 bottom-0 w-80 bg-[#080c14] border-l border-white/[0.08] z-40 overflow-y-auto font-mono flex flex-col"
                             >
-                                <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
-                                    <span className="text-xs font-bold text-white">{lesson.milestone.title}</span>
-                                    <button onClick={() => setShowSidebar(false)} className="p-1 rounded hover:bg-white/5 text-zinc-500"><X className="w-4 h-4" /></button>
+                                <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-[#0a0f1a]">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] text-neon-green/60 uppercase tracking-widest">Module Contents</span>
+                                        <span className="text-xs font-black text-white truncate uppercase tracking-wider">{lesson.milestone.title}</span>
+                                    </div>
+                                    <button onClick={() => setShowSidebar(false)} className="p-2 border border-white/5 hover:bg-white/5 text-zinc-500 transition-colors"><X className="w-4 h-4" /></button>
                                 </div>
-                                <div className="p-3 space-y-1">
+                                <div className="p-3 flex-1 space-y-1 bg-[#050810]/50">
                                     {sidebarLessons.map((sl) => {
                                         const ti = typeIcons[sl.type] || typeIcons.doc;
                                         const Icon = ti.icon;
@@ -489,14 +589,27 @@ export default function LessonPage() {
                                             <Link
                                                 key={sl.id}
                                                 href={`/courses/${slug}/lessons/${sl.id}`}
-                                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive ? "bg-white/[0.06] border border-white/[0.08]" : "hover:bg-white/[0.03]"}`}
+                                                className={`flex items-center gap-4 px-4 py-3 border transition-all ${isActive
+                                                    ? "bg-neon-green/5 border-neon-green/30 text-neon-green shadow-[0_0_15px_rgba(0,255,163,0.05)]"
+                                                    : "bg-white/[0.01] border-white/5 text-zinc-500 hover:border-white/20 hover:text-zinc-300"}`}
                                             >
-                                                <Icon className={`w-4 h-4 ${ti.color} shrink-0`} />
-                                                <span className={`text-xs flex-1 ${isActive ? "text-white font-bold" : sl.completed ? "text-zinc-500" : "text-zinc-400"}`}>{sl.title}</span>
-                                                {sl.completed && <CheckCircle2 className="w-3.5 h-3.5 text-neon-green shrink-0" />}
+                                                <Icon className={`w-4 h-4 ${isActive ? "text-neon-green" : ti.color} shrink-0`} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={`text-[11px] font-black uppercase tracking-wider ${isActive ? "text-white" : ""}`}>{sl.title}</div>
+                                                    <div className="text-[9px] text-zinc-600 mt-0.5 uppercase tracking-widest">
+                                                        {sl.type} {sl.completed ? "— [COMPLETED]" : "— [PENDING]"}
+                                                    </div>
+                                                </div>
+                                                {sl.completed && <CheckCircle2 className="w-4 h-4 text-neon-green shrink-0" />}
+                                                {isActive && <div className="w-1 h-4 bg-neon-green" />}
                                             </Link>
                                         );
                                     })}
+                                </div>
+                                <div className="p-5 border-t border-white/[0.08] bg-[#0a0f1a]">
+                                    <button className="w-full py-3 border border-white/10 text-[10px] text-zinc-500 uppercase font-black tracking-widest hover:text-white hover:border-white/20 transition-all">
+                                        View Full Catalog
+                                    </button>
                                 </div>
                             </motion.div>
                         </>
@@ -505,27 +618,38 @@ export default function LessonPage() {
             </div>
 
             {/* Bottom bar */}
-            <div className="shrink-0 border-t border-white/[0.06] bg-[#020408] px-4 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className="shrink-0 border-t border-white/[0.08] bg-[#020408] px-6 py-3 flex items-center justify-between font-mono relative z-10">
+                <div className="flex items-center gap-4">
                     {lesson.prev ? (
-                        <Link href={`/courses/${slug}/lessons/${lesson.prev.id}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-xs text-zinc-500 hover:text-white transition-colors">
-                            <ArrowLeft className="w-3 h-3" /> Previous
+                        <Link href={`/courses/${slug}/lessons/${lesson.prev.id}`} className="flex items-center gap-2 group text-xs text-zinc-500 hover:text-neon-green transition-colors">
+                            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                            <span className="hidden sm:inline uppercase tracking-widest">Previous</span>
                         </Link>
                     ) : <div />}
                 </div>
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-green to-emerald-400 text-black text-xs font-black"
-                >
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Mark Complete
-                </motion.button>
-                <div className="flex items-center gap-3">
+
+                <div className="flex items-center gap-4">
+                    <div className="h-6 w-px bg-white/10 hidden sm:block" />
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex items-center gap-2.5 px-6 py-2 bg-white/[0.03] border border-white/10 hover:border-neon-green/40 hover:text-neon-green transition-all text-zinc-400 text-[10px] font-black uppercase tracking-widest group"
+                    >
+                        <CheckCircle2 className="w-4 h-4 group-hover:text-neon-green" />
+                        Mark Complete
+                    </motion.button>
+                    <div className="h-6 w-px bg-white/10 hidden sm:block" />
+                </div>
+
+                <div className="flex items-center gap-4">
                     {lesson.next ? (
-                        <Link href={`/courses/${slug}/lessons/${lesson.next.id}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-xs text-zinc-500 hover:text-white transition-colors">
-                            Next <ArrowRight className="w-3 h-3" />
+                        <Link href={`/courses/${slug}/lessons/${lesson.next.id}`} className="flex items-center gap-2 group text-xs text-zinc-500 hover:text-neon-cyan transition-colors">
+                            <span className="hidden sm:inline uppercase tracking-widest">Next Lesson</span>
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                         </Link>
-                    ) : <div />}
+                    ) : (
+                        <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-black">Quest Complete</div>
+                    )}
                 </div>
             </div>
         </div>

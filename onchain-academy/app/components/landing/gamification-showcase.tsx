@@ -15,25 +15,17 @@ function LeaderboardPreview() {
         { rank: 5, name: "pedro.sol", xp: 15200, level: 12, streak: 15, avatar: "5", change: "0", title: "Warrior" },
     ];
 
-    const rankColors: Record<number, string> = {
-        1: "from-amber-400 to-yellow-200",
-        2: "from-zinc-300 to-zinc-400",
-        3: "from-amber-600 to-amber-700",
-    };
-
     return (
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
+        <div className="border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
             <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-                        <Crown className="w-4 h-4 text-amber-400" />
-                    </motion.div>
-                    <span className="text-sm font-black text-white">⚔️ Arena Leaderboard</span>
+                <div className="flex items-center gap-2 font-mono">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">Arena Leaderboard</span>
                 </div>
                 <div className="flex gap-1">
                     {["Weekly", "Season", "All-Time"].map((filter, i) => (
                         <button key={filter}
-                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${i === 0 ? "bg-neon-green/10 text-neon-green border border-neon-green/20" : "text-zinc-600 hover:text-zinc-400"}`}
+                            className={`px-2.5 py-1 text-[10px] font-bold font-mono uppercase tracking-wider transition-all ${i === 0 ? "bg-neon-green/10 text-neon-green border border-neon-green/20" : "text-zinc-600 hover:text-zinc-400"}`}
                         >
                             {filter}
                         </button>
@@ -58,31 +50,29 @@ function LeaderboardPreview() {
                                 className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0"
                             />
                         )}
-                        <div className="w-8 text-center relative z-10">
+                        <div className="w-8 text-center relative z-10 font-mono">
                             {player.rank <= 3 ? (
-                                <span className={`text-lg font-black bg-clip-text text-transparent bg-gradient-to-b ${rankColors[player.rank]}`}>
-                                    {player.avatar}
-                                </span>
+                                <span className="text-lg font-black text-amber-400">{player.avatar}</span>
                             ) : (
                                 <span className="text-sm font-bold text-zinc-600">#{player.rank}</span>
                             )}
                         </div>
                         <div className="flex-1 min-w-0 relative z-10">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-white truncate group-hover:text-neon-green transition-colors">
+                                <span className="text-sm font-bold font-mono text-white truncate group-hover:text-neon-green transition-colors">
                                     {player.name}
                                 </span>
-                                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${player.title === "Grandmaster" ? "bg-amber-400/10 text-amber-400" :
-                                    player.title === "Champion" ? "bg-neon-purple/10 text-neon-purple" :
-                                        "bg-white/5 text-zinc-500"
+                                <span className={`text-[8px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 ${player.title === "Grandmaster" ? "bg-amber-400/10 text-amber-400 border border-amber-400/20" :
+                                    player.title === "Champion" ? "bg-neon-purple/10 text-neon-purple border border-neon-purple/20" :
+                                        "bg-white/5 text-zinc-500 border border-white/[0.06]"
                                     }`}>{player.title}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] text-zinc-600">
+                            <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-mono">
                                 <span className="flex items-center gap-0.5">Lvl {player.level}</span>
                                 <span className="flex items-center gap-0.5 text-orange-400/60"><Flame className="w-2.5 h-2.5" />{player.streak}d</span>
                             </div>
                         </div>
-                        <div className="text-right relative z-10">
+                        <div className="text-right relative z-10 font-mono">
                             <div className="text-sm font-black text-neon-green">{player.xp.toLocaleString()}</div>
                             <div className={`text-[10px] font-bold ${player.change.startsWith("+") ? "text-emerald-400" : player.change === "0" ? "text-zinc-600" : "text-red-400"}`}>
                                 {player.change !== "0" ? `${player.change} ↕` : "—"}
@@ -98,15 +88,15 @@ function LeaderboardPreview() {
                     transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
                     className="absolute inset-y-0 w-40 bg-gradient-to-r from-transparent via-neon-green/5 to-transparent"
                 />
-                <div className="flex items-center gap-2 text-[10px] relative z-10">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-neon-green to-emerald-400 flex items-center justify-center text-[8px] font-black text-black">U</div>
+                <div className="flex items-center gap-2 text-[10px] font-mono relative z-10">
+                    <div className="w-6 h-6 bg-neon-green/20 border border-neon-green/30 flex items-center justify-center text-[8px] font-black text-neon-green">U</div>
                     <span className="text-zinc-500">Your rank: </span>
                     <span className="text-white font-black">#42</span>
                     <span className="text-zinc-600">• 7,340 XP</span>
                     <span className="text-neon-green font-bold">⬆ +5 this week</span>
                 </div>
                 <Link href="/auth">
-                    <button className="text-[10px] text-neon-cyan font-bold hover:text-neon-cyan/80 flex items-center gap-0.5 relative z-10">
+                    <button className="text-[10px] font-mono text-neon-cyan font-bold hover:text-neon-cyan/80 flex items-center gap-0.5 relative z-10 uppercase tracking-wider">
                         View Full Board <ChevronRight className="w-3 h-3" />
                     </button>
                 </Link>
@@ -120,12 +110,12 @@ function AchievementGrid() {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const achievements = [
-        { icon: Star, name: "First Steps", desc: "Complete your first lesson", earned: true, rarity: "Common", color: "from-emerald-400 to-neon-green", xp: 50 },
-        { icon: Flame, name: "Week Warrior", desc: "7-day streak", earned: true, rarity: "Uncommon", color: "from-orange-400 to-amber-400", xp: 100 },
-        { icon: Swords, name: "Challenge Master", desc: "Pass 10 challenges", earned: true, rarity: "Rare", color: "from-neon-cyan to-blue-400", xp: 200 },
-        { icon: Shield, name: "Anchor Expert", desc: "Complete Anchor track", earned: false, rarity: "Epic", color: "from-neon-purple to-violet-400", xp: 500 },
-        { icon: Crown, name: "Speed Runner", desc: "Finish course in 1 week", earned: false, rarity: "Legendary", color: "from-amber-400 to-yellow-300", xp: 1000 },
-        { icon: Award, name: "Bug Hunter", desc: "Report 3 valid bugs", earned: false, rarity: "Legendary", color: "from-red-400 to-pink-400", xp: 750 },
+        { icon: Star, name: "First Steps", desc: "Complete your first lesson", earned: true, rarity: "Common", color: "text-neon-green", xp: 50 },
+        { icon: Flame, name: "Week Warrior", desc: "7-day streak", earned: true, rarity: "Uncommon", color: "text-orange-400", xp: 100 },
+        { icon: Swords, name: "Challenge Master", desc: "Pass 10 challenges", earned: true, rarity: "Rare", color: "text-neon-cyan", xp: 200 },
+        { icon: Shield, name: "Anchor Expert", desc: "Complete Anchor track", earned: false, rarity: "Epic", color: "text-neon-purple", xp: 500 },
+        { icon: Crown, name: "Speed Runner", desc: "Finish course in 1 week", earned: false, rarity: "Legendary", color: "text-amber-400", xp: 1000 },
+        { icon: Award, name: "Bug Hunter", desc: "Report 3 valid bugs", earned: false, rarity: "Legendary", color: "text-red-400", xp: 750 },
     ];
 
     const rarityColors: Record<string, string> = {
@@ -145,13 +135,13 @@ function AchievementGrid() {
     };
 
     return (
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
+        <div className="border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
             <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 font-mono">
                     <Trophy className="w-4 h-4 text-amber-400" />
-                    <span className="text-sm font-black text-white">🏆 Achievements</span>
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">Achievements</span>
                 </div>
-                <span className="text-[10px] text-zinc-500 font-bold">3/6 Unlocked</span>
+                <span className="text-[10px] text-zinc-500 font-bold font-mono">3/6 Unlocked</span>
             </div>
 
             <div className="grid grid-cols-3 gap-px bg-white/[0.03]">
@@ -174,13 +164,11 @@ function AchievementGrid() {
                         <motion.div
                             animate={hoveredIndex === i && a.earned ? { rotate: [0, -10, 10, -5, 5, 0], scale: [1, 1.1, 1] } : {}}
                             transition={{ duration: 0.5 }}
-                            className={`w-14 h-14 mx-auto rounded-xl bg-gradient-to-br ${a.color} p-[1.5px] ${a.earned ? rarityGlows[a.rarity] : ""}`}
+                            className={`w-14 h-14 mx-auto border ${a.earned ? "border-neon-green/30" : "border-white/10"} flex items-center justify-center ${a.earned ? rarityGlows[a.rarity] : ""}`}
                         >
-                            <div className="w-full h-full rounded-xl bg-[#0a0f1a] flex items-center justify-center group-hover:bg-[#0d1220] transition-colors">
-                                <a.icon className="w-6 h-6 text-white" />
-                            </div>
+                            <a.icon className={`w-6 h-6 ${a.color}`} />
                         </motion.div>
-                        <div>
+                        <div className="font-mono">
                             <div className="text-xs font-bold text-white">{a.name}</div>
                             <div className={`text-[9px] font-black ${rarityColors[a.rarity]} uppercase tracking-wider`}>{a.rarity}</div>
                             <div className="text-[10px] text-zinc-600 mt-0.5 font-bold">+{a.xp} XP</div>
@@ -206,17 +194,17 @@ function BattlePass() {
     ];
 
     return (
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
+        <div className="border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
             <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 font-mono">
                     <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
                         <Sparkles className="w-4 h-4 text-neon-purple" />
                     </motion.div>
-                    <span className="text-sm font-black text-white">⚔️ Season 1 Battle Pass</span>
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">Season 1 Battle Pass</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 font-mono">
                     <span className="text-[10px] text-zinc-500 font-bold">Tier 12/100</span>
-                    <span className="text-[10px] text-neon-green font-bold">FREE</span>
+                    <span className="text-[10px] text-neon-green font-bold border border-neon-green/20 px-1.5 py-0.5">FREE</span>
                 </div>
             </div>
 
@@ -225,7 +213,6 @@ function BattlePass() {
                 <div className="flex items-center gap-0 min-w-[600px]">
                     {tiers.map((tier, i) => (
                         <div key={i} className="flex items-center">
-                            {/* Tier node */}
                             <motion.div
                                 initial={{ scale: 0 }}
                                 whileInView={{ scale: 1 }}
@@ -233,10 +220,10 @@ function BattlePass() {
                                 transition={{ delay: i * 0.08, type: "spring", bounce: 0.4 }}
                                 className="flex flex-col items-center relative"
                             >
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg relative ${tier.unlocked
-                                    ? "bg-gradient-to-br from-neon-green to-emerald-400 shadow-[0_0_20px_rgba(0,255,163,0.3)]"
+                                <div className={`w-12 h-12 flex items-center justify-center text-lg relative ${tier.unlocked
+                                    ? "bg-neon-green/20 border border-neon-green/40 shadow-[0_0_20px_rgba(0,255,163,0.3)]"
                                     : tier.current
-                                        ? "bg-gradient-to-br from-neon-purple to-violet-400 shadow-[0_0_20px_rgba(153,69,255,0.3)] ring-2 ring-neon-purple/50"
+                                        ? "bg-neon-purple/20 border border-neon-purple/40 shadow-[0_0_20px_rgba(153,69,255,0.3)] ring-2 ring-neon-purple/50"
                                         : "bg-white/5 border border-white/10"
                                     }`}>
                                     {tier.unlocked ? (
@@ -252,11 +239,11 @@ function BattlePass() {
                                         <motion.div
                                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
                                             transition={{ duration: 1.5, repeat: Infinity }}
-                                            className="absolute inset-0 rounded-xl border-2 border-neon-purple"
+                                            className="absolute inset-0 border-2 border-neon-purple"
                                         />
                                     )}
                                 </div>
-                                <div className="mt-2 text-center w-20">
+                                <div className="mt-2 text-center w-20 font-mono">
                                     <div className={`text-[9px] font-black uppercase tracking-wider ${tier.unlocked ? "text-neon-green" : tier.current ? "text-neon-purple" : "text-zinc-600"}`}>
                                         Lvl {tier.level}
                                     </div>
@@ -272,14 +259,14 @@ function BattlePass() {
                             {/* Connector */}
                             {i < tiers.length - 1 && (
                                 <div className="w-8 h-[2px] mx-1 relative">
-                                    <div className="absolute inset-0 bg-white/10 rounded-full" />
+                                    <div className="absolute inset-0 bg-white/10" />
                                     {tier.unlocked && (
                                         <motion.div
                                             initial={{ width: 0 }}
                                             whileInView={{ width: "100%" }}
                                             viewport={{ once: true }}
                                             transition={{ delay: i * 0.1, duration: 0.3 }}
-                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-neon-green to-emerald-400 rounded-full"
+                                            className="absolute inset-y-0 left-0 bg-neon-green"
                                         />
                                     )}
                                 </div>
@@ -289,7 +276,7 @@ function BattlePass() {
                 </div>
             </div>
 
-            <div className="px-5 py-3 border-t border-white/5 bg-white/[0.02] flex items-center justify-between relative overflow-hidden">
+            <div className="px-5 py-3 border-t border-white/5 bg-white/[0.02] flex items-center justify-between relative overflow-hidden font-mono">
                 <div className="flex items-center gap-2 text-[10px]">
                     <Gift className="w-3.5 h-3.5 text-neon-purple" />
                     <span className="text-zinc-500">Next reward in</span>
@@ -306,11 +293,11 @@ function BattlePass() {
 /* ─── RPG Player Card ─── */
 function PlayerCard() {
     const skills = [
-        { name: "Rust", level: 7, maxLevel: 10, xp: 2800, color: "from-orange-500 to-red-500", icon: "🦀" },
-        { name: "TypeScript", level: 5, maxLevel: 10, xp: 1500, color: "from-blue-500 to-blue-400", icon: "📘" },
-        { name: "Anchor", level: 4, maxLevel: 10, xp: 1200, color: "from-neon-purple to-violet-400", icon: "⚓" },
-        { name: "DeFi", level: 2, maxLevel: 10, xp: 400, color: "from-neon-cyan to-emerald-400", icon: "💰" },
-        { name: "Security", level: 1, maxLevel: 10, xp: 100, color: "from-red-500 to-pink-500", icon: "🔒" },
+        { name: "Rust", level: 7, maxLevel: 10, xp: 2800, color: "bg-orange-500", icon: "🦀" },
+        { name: "TypeScript", level: 5, maxLevel: 10, xp: 1500, color: "bg-blue-400", icon: "📘" },
+        { name: "Anchor", level: 4, maxLevel: 10, xp: 1200, color: "bg-neon-purple", icon: "⚓" },
+        { name: "DeFi", level: 2, maxLevel: 10, xp: 400, color: "bg-neon-cyan", icon: "💰" },
+        { name: "Security", level: 1, maxLevel: 10, xp: 100, color: "bg-red-500", icon: "🔒" },
     ];
 
     const rpgStats = [
@@ -322,11 +309,11 @@ function PlayerCard() {
     ];
 
     return (
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
-            <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+        <div className="border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
+            <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between font-mono">
                 <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-neon-cyan" />
-                    <span className="text-sm font-black text-white">🎮 Player Card</span>
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">Player Card</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 font-bold">Preview</span>
             </div>
@@ -337,17 +324,17 @@ function PlayerCard() {
                     <motion.div
                         animate={{ borderColor: ["rgba(0,255,163,0.3)", "rgba(153,69,255,0.3)", "rgba(0,240,255,0.3)", "rgba(0,255,163,0.3)"] }}
                         transition={{ duration: 3, repeat: Infinity }}
-                        className="w-16 h-16 rounded-xl border-2 bg-gradient-to-br from-neon-green/20 to-neon-purple/20 flex items-center justify-center text-2xl relative"
+                        className="w-16 h-16 border-2 bg-neon-green/10 flex items-center justify-center text-2xl relative"
                     >
                         🧑‍💻
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-neon-green to-emerald-400 flex items-center justify-center text-[10px] font-black text-black border-2 border-[#0a0f1a]">
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-neon-green/20 border border-neon-green/40 flex items-center justify-center text-[10px] font-mono font-black text-neon-green">
                             7
                         </div>
                     </motion.div>
-                    <div>
+                    <div className="font-mono">
                         <div className="text-white font-bold flex items-center gap-2">
                             you.sol
-                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-neon-purple/10 text-neon-purple">Warrior</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 bg-neon-purple/10 text-neon-purple border border-neon-purple/20">Warrior</span>
                         </div>
                         <div className="text-[10px] text-zinc-500">Joined 45 days ago • 8 achievements</div>
                         <div className="flex items-center gap-2 mt-1 text-[10px]">
@@ -358,10 +345,12 @@ function PlayerCard() {
                     </div>
                 </div>
 
-                {/* RPG Stats Pentagon (simplified as bars) */}
+                {/* RPG Stats */}
                 <div className="space-y-2">
-                    <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">⚔️ Combat Stats</div>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="text-[10px] text-zinc-500 font-bold font-mono uppercase tracking-[0.2em]">
+                        <span className="text-neon-green/60">// </span>combat_stats
+                    </div>
+                    <div className="grid grid-cols-5 gap-2 font-mono">
                         {rpgStats.map((stat, i) => (
                             <motion.div
                                 key={i}
@@ -381,7 +370,9 @@ function PlayerCard() {
 
                 {/* Skill Trees */}
                 <div className="space-y-2.5">
-                    <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">🌿 Skill Trees</div>
+                    <div className="text-[10px] text-zinc-500 font-bold font-mono uppercase tracking-[0.2em]">
+                        <span className="text-neon-green/60">// </span>skill_trees
+                    </div>
                     {skills.map((skill, i) => (
                         <motion.div
                             key={i}
@@ -391,19 +382,19 @@ function PlayerCard() {
                             transition={{ delay: i * 0.06 }}
                             className="space-y-1"
                         >
-                            <div className="flex items-center justify-between text-[10px]">
+                            <div className="flex items-center justify-between text-[10px] font-mono">
                                 <span className="text-white font-bold flex items-center gap-1.5">
                                     <span>{skill.icon}</span> {skill.name}
                                 </span>
-                                <span className="text-zinc-500 font-mono">Lvl {skill.level}/{skill.maxLevel}</span>
+                                <span className="text-zinc-500">Lvl {skill.level}/{skill.maxLevel}</span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                            <div className="h-1.5 bg-white/5 overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     whileInView={{ width: `${(skill.level / skill.maxLevel) * 100}%` }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.8, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                                    className={`h-full rounded-full bg-gradient-to-r ${skill.color}`}
+                                    className={`h-full ${skill.color}`}
                                 />
                             </div>
                         </motion.div>
@@ -424,13 +415,13 @@ function DailyQuests() {
     ];
 
     return (
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
-            <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+        <div className="border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
+            <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between font-mono">
                 <div className="flex items-center gap-2">
                     <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
                         <Target className="w-4 h-4 text-neon-cyan" />
                     </motion.div>
-                    <span className="text-sm font-black text-white">🎯 Active Quests</span>
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">Active Quests</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 font-bold">Resets in 8h 24m</span>
             </div>
@@ -443,7 +434,7 @@ function DailyQuests() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: i * 0.08 }}
-                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all relative overflow-hidden ${q.done
+                        className={`flex items-center gap-3 p-3 border transition-all relative overflow-hidden ${q.done
                             ? "border-neon-green/20 bg-neon-green/5"
                             : "border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.02]"
                             }`}
@@ -459,24 +450,24 @@ function DailyQuests() {
                         <span className="text-lg relative z-10">{q.icon}</span>
                         <div className="flex-1 min-w-0 relative z-10">
                             <div className="flex items-center gap-2">
-                                <span className={`text-xs font-bold ${q.done ? "text-neon-green line-through" : "text-white"}`}>
+                                <span className={`text-xs font-bold font-mono ${q.done ? "text-neon-green line-through" : "text-white"}`}>
                                     {q.title}
                                 </span>
-                                <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-0.5 rounded ${q.type === "Weekly" ? "bg-neon-purple/10 text-neon-purple" : "bg-white/5 text-zinc-500"}`}>
+                                <span className={`text-[8px] font-black font-mono uppercase tracking-wider px-1 py-0.5 ${q.type === "Weekly" ? "bg-neon-purple/10 text-neon-purple border border-neon-purple/20" : "bg-white/5 text-zinc-500 border border-white/[0.06]"}`}>
                                     {q.type}
                                 </span>
                             </div>
-                            <div className="mt-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                            <div className="mt-1 h-1.5 bg-white/5 overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     whileInView={{ width: `${q.progress}%` }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.8, delay: i * 0.12 }}
-                                    className={`h-full rounded-full ${q.done ? "bg-neon-green" : "bg-neon-cyan"}`}
+                                    className={`h-full ${q.done ? "bg-neon-green" : "bg-neon-cyan"}`}
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-400/10 relative z-10">
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-400/10 border border-amber-400/20 relative z-10 font-mono">
                             <Zap className="w-3 h-3 text-amber-400" />
                             <span className="text-[10px] font-black text-amber-400">+{q.xp}</span>
                         </div>
@@ -484,7 +475,7 @@ function DailyQuests() {
                 ))}
             </div>
 
-            <div className="px-5 py-3 border-t border-white/5 bg-white/[0.02]">
+            <div className="px-5 py-3 border-t border-white/5 bg-white/[0.02] font-mono">
                 <div className="flex items-center justify-between text-[10px]">
                     <span className="text-zinc-500">🎁 Daily bonus: Complete all quests for</span>
                     <motion.span
@@ -516,19 +507,21 @@ export function GamificationShowcase() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="text-center max-w-3xl mx-auto mb-16 md:mb-20 space-y-4"
+                    className="max-w-3xl mx-auto mb-16 md:mb-20 space-y-5"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-400">
-                        <Trophy className="w-3 h-3" />
-                        Full RPG System
+                    <div className="flex items-center gap-3">
+                        <span className="text-neon-green font-mono text-sm">{">"}</span>
+                        <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                            rpg_system
+                        </span>
+                        <div className="flex-1 h-px bg-white/[0.06]" />
                     </div>
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">
                         Not a Tutorial.{" "}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-400">
-                            An RPG.
-                        </span>
+                        <span className="text-amber-400">An RPG.</span>
                     </h2>
-                    <p className="text-zinc-400 text-lg max-w-xl mx-auto">
+                    <p className="text-zinc-400 text-sm max-w-xl font-mono leading-relaxed">
+                        <span className="text-neon-green/60">// </span>
                         Level up your character. Grow skill trees. Stack combos. Complete daily quests.
                         Earn loot. Climb the arena leaderboard. Every line of code is an attack.
                     </p>
@@ -536,7 +529,7 @@ export function GamificationShowcase() {
 
                 {/* Grid */}
                 <div ref={ref} className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                    {/* Left column - tall */}
+                    {/* Left column */}
                     <div className="lg:col-span-5 space-y-5">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
                             <PlayerCard />

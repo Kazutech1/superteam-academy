@@ -118,22 +118,26 @@ export default function CourseDetailPage() {
         <div className="min-h-screen bg-[#020408] relative overflow-hidden">
             {/* Background effects */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-neon-green/[0.03] rounded-full blur-[200px]" />
-                <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-neon-purple/[0.03] rounded-full blur-[150px]" />
+                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-neon-green/[0.03] blur-[200px]" />
+                <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-neon-purple/[0.03] blur-[150px]" />
+                {/* Scanlines */}
+                <div className="absolute inset-0 opacity-[0.02]" style={{
+                    backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,163,0.08) 2px, rgba(0,255,163,0.08) 4px)",
+                }} />
             </div>
 
             {/* Top Bar */}
             <header className="relative z-10 border-b border-white/[0.06]">
                 <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/courses" className="flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors group">
+                    <Link href="/courses" className="flex items-center gap-2 text-sm text-zinc-500 hover:text-neon-green transition-colors group font-mono">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                        All Courses
+                        cd ../courses
                     </Link>
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-green to-emerald-400 flex items-center justify-center">
-                            <Zap className="w-4 h-4 text-black" />
+                        <div className="w-8 h-8 border border-neon-green/30 bg-[#080c14] flex items-center justify-center">
+                            <Zap className="w-4 h-4 text-neon-green" />
                         </div>
-                        <span className="text-sm font-black text-white tracking-tight">SolLearn</span>
+                        <span className="text-sm font-black text-white tracking-tight font-mono">SolLearn</span>
                     </div>
                 </div>
             </header>
@@ -141,30 +145,42 @@ export default function CourseDetailPage() {
             <main className="relative z-10 max-w-5xl mx-auto px-6 py-10">
                 {/* ── Hero header ── */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+                    {/* Terminal heading */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <span className="text-neon-green font-mono text-sm">{">"}</span>
+                        <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                            course_detail
+                        </span>
+                        <div className="flex-1 h-px bg-white/[0.06]" />
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <span className={`px-3 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${diff.bg} ${diff.border} ${diff.text}`}>
+                        <span className={`px-3 py-1 border text-[10px] font-bold font-mono uppercase tracking-wider ${diff.bg} ${diff.border} ${diff.text}`}>
                             {course.difficulty}
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-bold">
+                        <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-bold font-mono">
                             <Clock className="w-3.5 h-3.5" /> {course.duration}
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-bold">
+                        <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-bold font-mono">
                             <Users className="w-3.5 h-3.5" /> {course.students} students
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
+                        <span className="flex items-center gap-1 text-[10px] text-amber-400 font-bold font-mono">
                             <Star className="w-3.5 h-3.5 fill-amber-400" /> {course.rating} ({course.reviews})
                         </span>
                     </div>
 
-                    <h1 className="text-3xl md:text-4xl font-black text-white mb-3">{course.title}</h1>
-                    <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed">{course.description}</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-white font-mono mb-3">{course.title}</h1>
+                    <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed font-mono">
+                        <span className="text-neon-green/40">// </span>
+                        {course.description}
+                    </p>
 
                     {/* Instructor */}
                     <div className="mt-6 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-green/20 to-neon-cyan/20 border border-white/10 flex items-center justify-center text-xs font-black text-white">
+                        <div className="w-10 h-10 border border-white/10 bg-white/[0.02] flex items-center justify-center text-xs font-black text-white font-mono">
                             {course.instructor.name.split(" ").map((n) => n[0]).join("")}
                         </div>
-                        <div>
+                        <div className="font-mono">
                             <div className="text-sm font-bold text-white">{course.instructor.name}</div>
                             <div className="text-[10px] text-zinc-500">{course.instructor.role}</div>
                         </div>
@@ -174,8 +190,9 @@ export default function CourseDetailPage() {
                 <div className="grid lg:grid-cols-[1fr_320px] gap-8">
                     {/* ── Left: Milestones ── */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-4">
-                        <h2 className="text-lg font-black text-white flex items-center gap-2">
-                            <Trophy className="w-5 h-5 text-amber-400" /> Milestones
+                        <h2 className="text-lg font-black text-white font-mono flex items-center gap-2">
+                            <Trophy className="w-5 h-5 text-amber-400" />
+                            <span className="text-neon-green/40">// </span>milestones
                             <span className="text-[10px] text-zinc-600 font-bold ml-auto">{completedLessons}/{totalLessons} lessons</span>
                         </h2>
 
@@ -185,13 +202,19 @@ export default function CourseDetailPage() {
                             const milestonePct = Math.round((milestoneProgress / milestone.lessons.length) * 100);
 
                             return (
-                                <div key={milestone.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+                                <div key={milestone.id} className="border border-white/[0.06] bg-white/[0.02] overflow-hidden relative group">
+                                    {/* Corner brackets */}
+                                    <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity z-20" />
+                                    <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity z-20" />
+                                    <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity z-20" />
+                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity z-20" />
+
                                     {/* Milestone header */}
                                     <button
                                         onClick={() => setExpandedMilestone(isOpen ? null : milestone.id)}
-                                        className="w-full flex items-center gap-4 p-5 text-left hover:bg-white/[0.02] transition-colors"
+                                        className="w-full flex items-center gap-4 p-5 text-left hover:bg-white/[0.02] transition-colors font-mono"
                                     >
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${milestone.completed ? "bg-neon-green/10 text-neon-green" : "bg-white/[0.04] text-zinc-500"}`}>
+                                        <div className={`w-10 h-10 flex items-center justify-center text-sm font-black shrink-0 ${milestone.completed ? "bg-neon-green/10 text-neon-green border border-neon-green/20" : "bg-white/[0.04] text-zinc-500 border border-white/[0.06]"}`}>
                                             {milestone.completed ? <CheckCircle2 className="w-5 h-5" /> : <span>{mIdx + 1}</span>}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -203,8 +226,8 @@ export default function CourseDetailPage() {
                                             </div>
                                             <p className="text-[11px] text-zinc-500 mt-0.5">{milestone.description}</p>
                                             {/* mini progress */}
-                                            <div className="mt-2 h-1 rounded-full bg-white/[0.04] overflow-hidden">
-                                                <div className="h-full rounded-full bg-gradient-to-r from-neon-green to-neon-cyan transition-all" style={{ width: `${milestonePct}%` }} />
+                                            <div className="mt-2 h-1 bg-white/[0.04] overflow-hidden">
+                                                <div className="h-full bg-neon-green transition-all" style={{ width: `${milestonePct}%` }} />
                                             </div>
                                         </div>
                                         {isOpen ? <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />}
@@ -228,10 +251,10 @@ export default function CourseDetailPage() {
                                                             <Link
                                                                 key={lesson.id}
                                                                 href={`/courses/${slug}/lessons/${lesson.id}`}
-                                                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors group"
+                                                                className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors group/lesson font-mono"
                                                             >
                                                                 <Icon className={`w-4 h-4 ${ti.color} shrink-0`} />
-                                                                <span className={`text-sm flex-1 ${lesson.completed ? "text-zinc-500 line-through" : "text-zinc-300 group-hover:text-white"} transition-colors`}>
+                                                                <span className={`text-sm flex-1 ${lesson.completed ? "text-zinc-500 line-through" : "text-zinc-300 group-hover/lesson:text-white"} transition-colors`}>
                                                                     {lesson.title}
                                                                 </span>
                                                                 <span className="text-[10px] text-zinc-600 font-bold">{lesson.duration}</span>
@@ -251,27 +274,37 @@ export default function CourseDetailPage() {
                     {/* ── Right Sidebar ── */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-6">
                         {/* Enroll / Progress card */}
-                        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-6 space-y-5 sticky top-6">
+                        <div className="border border-white/[0.08] bg-white/[0.03] p-6 space-y-5 sticky top-6 relative">
+                            {/* Corner brackets */}
+                            <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/20" />
+                            <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-neon-green/20" />
+                            <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-neon-green/20" />
+                            <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-neon-green/20" />
+
                             {/* XP */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Earn up to</span>
+                            <div className="flex items-center justify-between font-mono">
+                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                                    <span className="text-neon-green/40">$ </span>reward
+                                </span>
                                 <span className="flex items-center gap-1 text-neon-green font-black text-lg">
                                     <Zap className="w-5 h-5" /> {course.xp} XP
                                 </span>
                             </div>
 
                             {/* Progress */}
-                            <div>
+                            <div className="font-mono">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider">Progress</span>
+                                    <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider">
+                                        <span className="text-neon-green/40">// </span>progress
+                                    </span>
                                     <span className="text-[10px] text-zinc-500 font-bold">{course.progress}%</span>
                                 </div>
-                                <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden">
+                                <div className="h-2 bg-white/[0.04] overflow-hidden">
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${course.progress}%` }}
                                         transition={{ duration: 1, ease: "easeOut" }}
-                                        className="h-full rounded-full bg-gradient-to-r from-neon-green to-neon-cyan"
+                                        className="h-full bg-neon-green"
                                     />
                                 </div>
                             </div>
@@ -280,14 +313,14 @@ export default function CourseDetailPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-green to-emerald-400 text-black text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-neon-green/20"
+                                className="w-full py-3 bg-neon-green text-black text-sm font-black font-mono uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-neon-green/90 hover:shadow-[0_0_30px_rgba(0,255,163,0.2)] transition-all"
                             >
                                 {course.progress > 0 ? "Continue Learning" : "Start Course"}
                                 <ChevronRight className="w-4 h-4" />
                             </motion.button>
 
                             {/* Quick stats */}
-                            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.05]">
+                            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.05] font-mono">
                                 {[
                                     { label: "Milestones", value: String(course.milestones.length), icon: Trophy, color: "text-amber-400" },
                                     { label: "Lessons", value: String(totalLessons), icon: BookOpen, color: "text-neon-cyan" },
@@ -305,12 +338,16 @@ export default function CourseDetailPage() {
                             </div>
                         </div>
 
-                        {/* Locked indicator */}
-                        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-neon-green/10 flex items-center justify-center">
+                        {/* On-chain credential */}
+                        <div className="border border-white/[0.06] bg-white/[0.02] p-5 flex items-center gap-3 relative group">
+                            {/* Corner brackets */}
+                            <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                            <div className="w-10 h-10 bg-neon-green/10 border border-neon-green/20 flex items-center justify-center">
                                 <Lock className="w-5 h-5 text-neon-green" />
                             </div>
-                            <div>
+                            <div className="font-mono">
                                 <div className="text-xs font-bold text-white">On-Chain Credential</div>
                                 <div className="text-[10px] text-zinc-500">Complete all milestones to mint your soulbound NFT certificate</div>
                             </div>
@@ -320,19 +357,31 @@ export default function CourseDetailPage() {
 
                 {/* ── Reviews ── */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-14 space-y-6">
-                    <h2 className="text-lg font-black text-white flex items-center gap-2">
-                        <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> Student Reviews
-                    </h2>
+                    <div className="flex items-center gap-3">
+                        <span className="text-neon-green font-mono text-sm">{">"}</span>
+                        <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                            player_reviews
+                        </span>
+                        <div className="flex-1 h-px bg-white/[0.06]" />
+                    </div>
+
                     <div className="grid md:grid-cols-3 gap-4">
                         {staticReviews.map((review, i) => (
-                            <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3">
+                            <div key={i} className="border border-white/[0.06] bg-white/[0.02] p-5 space-y-3 relative group">
+                                {/* Corner brackets */}
+                                <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+
                                 <div className="flex items-center gap-1">
                                     {Array.from({ length: 5 }).map((_, s) => (
                                         <Star key={s} className={`w-3.5 h-3.5 ${s < review.rating ? "text-amber-400 fill-amber-400" : "text-zinc-700"}`} />
                                     ))}
                                 </div>
-                                <p className="text-xs text-zinc-400 leading-relaxed">&quot;{review.text}&quot;</p>
-                                <div className="flex items-center justify-between">
+                                <p className="text-xs text-zinc-400 leading-relaxed font-mono">
+                                    <span className="text-neon-green/40">{"> "}</span>
+                                    &quot;{review.text}&quot;
+                                </p>
+                                <div className="flex items-center justify-between font-mono">
                                     <span className="text-[10px] font-bold text-white">{review.name}</span>
                                     <span className="text-[10px] text-zinc-600">{review.date}</span>
                                 </div>

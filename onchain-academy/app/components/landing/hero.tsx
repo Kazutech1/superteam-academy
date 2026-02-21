@@ -2,306 +2,465 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Flame,
-  Trophy,
-  Zap,
-  Star,
-  Target,
-  Crown,
-  Shield,
-  Swords,
-  Gem,
-  ChevronUp,
-} from "lucide-react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { FloatingParticles } from "@/components/ui/floating-particles";
-import { useRef, useEffect, useState } from "react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef, useEffect, useCallback, useState } from "react";
 
-/* ─── Animated Counter ─── */
-function AnimatedCounter({ target, duration = 2, delay = 0.5, suffix = "" }: { target: number; duration?: number; delay?: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      let start = 0;
-      const step = target / (duration * 60);
-      const interval = setInterval(() => {
-        start += step;
-        if (start >= target) {
-          setCount(target);
-          clearInterval(interval);
-        } else {
-          setCount(Math.floor(start));
+/* ─── Animated Glowing Grid ─── */
+function AnimatedGrid() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    const spacing = 30;
+    const cols = Math.ceil(w / spacing) + 1;
+    const rows = Math.ceil(h / spacing) + 1;
+    const time = Date.now() / 1000;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Base grid lines
+    ctx.strokeStyle = "rgba(0, 255, 163, 0.06)";
+    ctx.lineWidth = 0.5;
+
+    for (let i = 0; i < cols; i++) {
+      const x = i * spacing;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+
+    for (let j = 0; j < rows; j++) {
+      const y = j * spacing;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Glowing pulse lines — vertical
+    const pulseCount = 6;
+    for (let p = 0; p < pulseCount; p++) {
+      const phase = time * 0.3 + p * 1.2;
+      const colIdx = Math.floor(
+        ((Math.sin(phase) * 0.5 + 0.5) * cols) % cols
+      );
+      const x = colIdx * spacing;
+
+      const intensity = Math.sin(time * 1.2 + p * 1.8) * 0.5 + 0.5;
+      const alpha = 0.08 + intensity * 0.18;
+
+      const grad = ctx.createLinearGradient(x, 0, x, h);
+      grad.addColorStop(0, "transparent");
+      grad.addColorStop(0.3, `rgba(0, 255, 163, ${alpha})`);
+      grad.addColorStop(0.5, `rgba(0, 255, 163, ${alpha * 1.5})`);
+      grad.addColorStop(0.7, `rgba(0, 255, 163, ${alpha})`);
+      grad.addColorStop(1, "transparent");
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+
+      ctx.shadowColor = "#00ffa3";
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = `rgba(0, 255, 163, ${alpha * 0.5})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Glowing pulse lines — horizontal
+    for (let p = 0; p < 5; p++) {
+      const phase = time * 0.25 + p * 1.6;
+      const rowIdx = Math.floor(
+        ((Math.cos(phase) * 0.5 + 0.5) * rows) % rows
+      );
+      const y = rowIdx * spacing;
+
+      const intensity = Math.cos(time * 1.0 + p * 1.5) * 0.5 + 0.5;
+      const alpha = 0.06 + intensity * 0.15;
+
+      const grad = ctx.createLinearGradient(0, y, w, y);
+      grad.addColorStop(0, "transparent");
+      grad.addColorStop(0.2, `rgba(0, 255, 163, ${alpha})`);
+      grad.addColorStop(0.5, `rgba(0, 255, 163, ${alpha * 1.3})`);
+      grad.addColorStop(0.8, `rgba(0, 255, 163, ${alpha})`);
+      grad.addColorStop(1, "transparent");
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+
+      ctx.shadowColor = "#00ffa3";
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = `rgba(0, 255, 163, ${alpha * 0.4})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Intersection glow dots
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const x = i * spacing;
+        const y = j * spacing;
+        const dist = Math.sin(time * 0.8 + i * 0.5 + j * 0.7) * 0.5 + 0.5;
+        if (dist > 0.78) {
+          const dotAlpha = (dist - 0.78) * 4.5;
+          ctx.fillStyle = `rgba(0, 255, 163, ${dotAlpha * 0.35})`;
+          ctx.shadowColor = "#00ffa3";
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
         }
-      }, 1000 / 60);
-      return () => clearInterval(interval);
-    }, delay * 1000);
-    return () => clearTimeout(timer);
-  }, [target, duration, delay]);
-  return <>{count.toLocaleString()}{suffix}</>;
-}
-
-/* ─── XP Progress Ring ─── */
-function XPProgressRing({ progress = 73, level = 7 }: { progress?: number; level?: number }) {
-  const radius = 52;
-  const circumference = 2 * Math.PI * radius;
-
-  return (
-    <div className="relative w-32 h-32 flex-shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-        {/* Background track */}
-        <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="8" />
-        {/* Tick marks */}
-        {Array.from({ length: 24 }).map((_, i) => {
-          const angle = (i / 24) * 360;
-          const rad = (angle * Math.PI) / 180;
-          const x1 = 60 + 46 * Math.cos(rad);
-          const y1 = 60 + 46 * Math.sin(rad);
-          const x2 = 60 + 44 * Math.cos(rad);
-          const y2 = 60 + 44 * Math.sin(rad);
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />;
-        })}
-        {/* Progress arc */}
-        <motion.circle
-          cx="60" cy="60" r={radius} fill="none" stroke="#00ffa3" strokeWidth="8" strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: circumference * (1 - progress / 100) }}
-          transition={{ duration: 2, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        />
-        {/* Glow filter */}
-        <defs>
-          <filter id="xpGlow">
-            <feGaussianBlur stdDeviation="3" result="glow" />
-            <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <motion.circle
-          cx="60" cy="60" r={radius} fill="none" stroke="#00ffa3" strokeWidth="4" strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: circumference * (1 - progress / 100) }}
-          transition={{ duration: 2, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          filter="url(#xpGlow)" opacity={0.5}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <Crown className="w-4 h-4 text-amber-400 mb-0.5" />
-        <span className="text-3xl font-black text-white">{level}</span>
-        <span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] font-bold">level</span>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Mini Leaderboard ─── */
-const leaderboardData = [
-  { rank: 1, name: "CryptoPilot", xp: "42,850", avatar: "🦊", change: "+3" },
-  { rank: 2, name: "SolanaWiz", xp: "38,200", avatar: "🐉", change: "+1" },
-  { rank: 3, name: "ChainMaster", xp: "35,600", avatar: "⚡", change: "-1" },
-];
-
-function MiniLeaderboard() {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2 mb-3">
-        <Trophy className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider">Top Questers</span>
-      </div>
-      {leaderboardData.map((player, idx) => (
-        <motion.div
-          key={player.rank}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 1.2 + idx * 0.15 }}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${idx === 0 ? "bg-amber-500/5 border border-amber-500/10" : "bg-white/[0.02] border border-transparent"
-            }`}
-        >
-          <span className={`text-xs font-black w-5 text-center ${idx === 0 ? "text-amber-400" : idx === 1 ? "text-zinc-400" : "text-zinc-600"
-            }`}>{player.rank}</span>
-          <span className="text-sm">{player.avatar}</span>
-          <span className="text-xs font-bold text-white flex-1">{player.name}</span>
-          <span className="text-[10px] text-zinc-500 font-mono">{player.xp} XP</span>
-          <span className="text-[10px] text-neon-green font-bold flex items-center">
-            <ChevronUp className="w-3 h-3" />{player.change}
-          </span>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Active Quest Card ─── */
-function ActiveQuestCard() {
-  const [tasksDone, setTasksDone] = useState(0);
-  useEffect(() => {
-    const t1 = setTimeout(() => setTasksDone(1), 1800);
-    const t2 = setTimeout(() => setTasksDone(2), 2600);
-    const t3 = setTimeout(() => setTasksDone(3), 3400);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+      }
+    }
   }, []);
 
-  const tasks = [
-    "Initialize Anchor workspace",
-    "Write program instruction",
-    "Deploy to devnet",
-    "Test with client SDK",
-    "Submit for review",
-  ];
+  useEffect(() => {
+    let raf: number;
+    const loop = () => {
+      draw();
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [draw]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const resize = () => {
+      draw();
+    };
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [draw]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-neon-green/10 flex items-center justify-center border border-neon-green/20">
-            <Swords className="w-4 h-4 text-neon-green" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-white">Deploy Your First Program</div>
-            <div className="text-[10px] text-zinc-500">Chapter 3 • Solana Basics</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
-          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-          <span className="text-[10px] text-amber-400 font-black">+250 XP</span>
-        </div>
-      </div>
-
-      {/* Task list */}
-      <div className="space-y-1.5">
-        {tasks.map((task, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0.3 }}
-            animate={{ opacity: idx < tasksDone ? 1 : idx === tasksDone ? 0.8 : 0.35 }}
-            className="flex items-center gap-2.5 py-1"
-          >
-            <div className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-all duration-300 ${idx < tasksDone
-                ? "bg-neon-green/20 border-neon-green/40"
-                : idx === tasksDone
-                  ? "border-neon-green/30 animate-pulse"
-                  : "border-white/10"
-              }`}>
-              {idx < tasksDone && (
-                <motion.svg
-                  initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  transition={{ type: "spring", bounce: 0.5 }}
-                  className="w-2.5 h-2.5 text-neon-green" viewBox="0 0 12 12" fill="none"
-                >
-                  <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </motion.svg>
-              )}
-              {idx === tasksDone && (
-                <div className="w-1.5 h-1.5 rounded-full bg-neon-green" />
-              )}
-            </div>
-            <span className={`text-xs ${idx < tasksDone ? "text-zinc-300 line-through" : idx === tasksDone ? "text-white font-medium" : "text-zinc-600"}`}>
-              {task}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Progress bar */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-zinc-500 font-mono">{tasksDone}/5 tasks</span>
-          <span className="text-neon-green font-bold">{Math.round((tasksDone / 5) * 100)}%</span>
-        </div>
-        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-neon-green"
-            initial={{ width: 0 }}
-            animate={{ width: `${(tasksDone / 5) * 100}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
-        </div>
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full"
+      style={{ opacity: 0.7 }}
+    />
   );
 }
 
-/* ─── Floating HUD Stat Badges ─── */
-function FloatingBadge({ icon: Icon, label, value, color, className, delay }: {
-  icon: any; label: string; value: string; color: string; className?: string; delay: number;
+/* ─── Floating Tech Badge ─── */
+function TechBadge({
+  icon,
+  label,
+  color,
+  className,
+  delay,
+}: {
+  icon: string;
+  label: string;
+  color: string;
+  className?: string;
+  delay: number;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.5, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6, delay, type: "spring", bounce: 0.3 }}
-      className={`absolute z-20 ${className}`}
+      className={`absolute z-20 hidden lg:flex ${className}`}
     >
       <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: delay * 0.5 }}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0a0f1a]/90 border border-white/[0.06] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+        animate={{ y: [0, -6, 0] }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: delay * 0.5,
+        }}
+        className="flex items-center gap-2 px-3 py-1.5 border border-white/[0.08] bg-[#0a0f1a]/80 backdrop-blur-sm"
       >
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
-          <Icon className="w-3.5 h-3.5" style={{ color }} />
-        </div>
-        <div>
-          <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold leading-none">{label}</div>
-          <div className="text-sm font-black text-white leading-tight">{value}</div>
-        </div>
+        <span
+          className="text-xs font-mono font-bold"
+          style={{ color }}
+        >
+          {icon}
+        </span>
+        <span className="text-xs font-mono font-semibold tracking-wider text-zinc-300 uppercase">
+          {label}
+        </span>
       </motion.div>
     </motion.div>
   );
 }
 
-/* ─── Achievement Badges ─── */
-const achievements = [
-  { emoji: "⚔️", label: "First Quest", unlocked: true },
-  { emoji: "🛡️", label: "Deployer", unlocked: true },
-  { emoji: "🔥", label: "Streak Master", unlocked: true },
-  { emoji: "💎", label: "Diamond Hands", unlocked: false },
-  { emoji: "👑", label: "Top 10", unlocked: false },
-];
-
-function AchievementRow() {
+/* ─── Hero Visual ─── */
+function HeroVisual() {
   return (
-    <div className="flex items-center gap-2">
-      {achievements.map((ach, idx) => (
-        <motion.div
-          key={idx}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 1.8 + idx * 0.1, type: "spring", bounce: 0.4 }}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center border text-sm ${ach.unlocked
-              ? "bg-white/[0.04] border-white/10 hover:border-neon-green/30 transition-colors cursor-pointer"
-              : "bg-white/[0.01] border-white/[0.04] opacity-30 grayscale"
-            }`}
-          title={ach.label}
-        >
-          {ach.emoji}
-        </motion.div>
-      ))}
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.8, delay: 0.3 }}
+      className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] mx-auto mb-4"
+    >
+      {/* Glow behind image */}
+      <div className="absolute inset-0 bg-neon-green/[0.08] blur-[60px] scale-75" />
+      <div className="absolute inset-0 bg-neon-cyan/[0.05] blur-[80px] scale-50 translate-y-4" />
+
+      {/* Floating animation wrapper */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.3 }}
-        className="text-[10px] text-zinc-600 font-mono ml-1"
+        animate={{ y: [0, -10, 0] }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="relative w-full h-full"
       >
-        3/5
+        <Image
+          src="/hero-solana.png"
+          alt="Solana Development"
+          fill
+          className="object-contain drop-shadow-[0_0_40px_rgba(0,255,163,0.15)]"
+          style={{ mixBlendMode: "screen" }}
+          priority
+        />
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 
-/* ─── Hex Grid Background ─── */
-function HexGridBackground() {
+/* ─── Hacker Button with Text Scramble ─── */
+const GLITCH_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?/~`0123456789ABCDEF";
+
+function HackerButton({ text }: { text: string }) {
+  const [displayText, setDisplayText] = useState(text);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scramble = useCallback(() => {
+    let iteration = 0;
+    const original = text;
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
+      setDisplayText(
+        original
+          .split("")
+          .map((char, idx) => {
+            if (idx < iteration) return original[idx];
+            return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+          })
+          .join("")
+      );
+
+      if (iteration >= original.length) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      }
+      iteration += 1 / 2;
+    }, 40);
+  }, [text]);
+
+  const reset = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setDisplayText(text);
+  }, [text]);
+
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <svg className="absolute inset-0 w-full h-full opacity-[0.025]" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="hexGrid" width="56" height="100" patternUnits="userSpaceOnUse" patternTransform="scale(2)">
-            <path d="M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100" fill="none" stroke="#00ffa3" strokeWidth="0.5" />
-            <path d="M28 0L28 -34L0 -50L-28 -34L-28 0L0 16" fill="none" stroke="#00ffa3" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#hexGrid)" />
-      </svg>
+    <Button
+      size="lg"
+      className="btn-hacker h-12 px-8 text-sm font-bold uppercase tracking-widest bg-neon-green text-black hover:bg-neon-green/90 transition-all duration-300 rounded-none border border-neon-green font-mono"
+      onMouseEnter={scramble}
+      onMouseLeave={reset}
+    >
+      {displayText}
+    </Button>
+  );
+}
+
+/* ─── Typewriter Effect ─── */
+function TypewriterText({ text, delay = 0 }: { text: string; delay?: number }) {
+  const [displayed, setDisplayed] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        setDisplayed(text.slice(0, i + 1));
+        i++;
+        if (i >= text.length) {
+          clearInterval(interval);
+          setDone(true);
+        }
+      }, 80);
+      return () => clearInterval(interval);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [text, delay]);
+
+  useEffect(() => {
+    const blink = setInterval(() => setShowCursor((v) => !v), 530);
+    return () => clearInterval(blink);
+  }, []);
+
+  return (
+    <span className="text-white font-black">
+      {displayed}
+      <span
+        className={`inline-block w-[3px] h-[0.85em] bg-neon-green ml-1 align-middle transition-opacity duration-100 ${showCursor ? "opacity-100" : "opacity-0"
+          } ${done ? "animate-pulse" : ""}`}
+      />
+    </span>
+  );
+}
+
+/* ─── Animated Counter ─── */
+function AnimatedCounter({
+  target,
+  suffix = "",
+  label,
+  duration = 2000,
+  delay = 0,
+}: {
+  target: number;
+  suffix?: string;
+  label: string;
+  duration?: number;
+  delay?: number;
+}) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(timeout);
+  }, [delay]);
+
+  useEffect(() => {
+    if (!started) return;
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [started, target, duration]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: delay / 1000 }}
+      className="flex flex-col items-center gap-1"
+    >
+      <span className="text-xl sm:text-2xl font-mono font-black text-neon-green">
+        {count.toLocaleString()}
+        {suffix}
+      </span>
+      <span className="text-xs font-mono uppercase tracking-widest text-zinc-500">
+        {label}
+      </span>
+    </motion.div>
+  );
+}
+
+/* ─── Mouse-Reactive Glow ─── */
+function MouseGlow() {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      setPos({ x: e.clientX, y: e.clientY });
+      setVisible(true);
+    };
+    const handleLeave = () => setVisible(false);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseleave", handleLeave);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseleave", handleLeave);
+    };
+  }, []);
+
+  return (
+    <div
+      className="pointer-events-none fixed z-[3] transition-opacity duration-300"
+      style={{
+        opacity: visible ? 1 : 0,
+        left: pos.x - 200,
+        top: pos.y - 200,
+        width: 400,
+        height: 400,
+        background:
+          "radial-gradient(circle, rgba(0,255,163,0.06) 0%, rgba(0,255,163,0.02) 40%, transparent 70%)",
+        filter: "blur(10px)",
+      }}
+    />
+  );
+}
+
+/* ─── Scrolling Code Lines (background decoration) ─── */
+function ScrollingCode() {
+  const lines = [
+    'use solana_program::account_info::AccountInfo;',
+    'use anchor_lang::prelude::*;',
+    'pub fn initialize(ctx: Context<Initialize>) -> Result<()> {',
+    '    let account = &mut ctx.accounts.data_account;',
+    '    account.authority = ctx.accounts.user.key();',
+    '    msg!("Program initialized successfully");',
+    '    Ok(())',
+    '}',
+    '#[derive(Accounts)]',
+    'pub struct Initialize<\'info> {',
+    '    #[account(init, payer = user, space = 8 + 32)]',
+    '    pub data_account: Account<\'info, DataAccount>,',
+    '    #[account(mut)]',
+    '    pub user: Signer<\'info>,',
+    '    pub system_program: Program<\'info, System>,',
+    '}',
+  ];
+
+  return (
+    <div className="absolute left-4 top-[15%] bottom-[15%] w-[300px] hidden xl:block overflow-hidden opacity-[0.07] pointer-events-none z-[2]">
+      <motion.div
+        animate={{ y: [0, -400] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="space-y-1 font-mono text-[10px] text-neon-green whitespace-nowrap"
+      >
+        {[...lines, ...lines, ...lines].map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}
+      </motion.div>
     </div>
   );
 }
@@ -317,226 +476,166 @@ export function Hero() {
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
-    <section ref={containerRef} className="relative min-h-screen flex items-center justify-center pt-20 pb-12 overflow-hidden">
+    <section
+      ref={containerRef}
+      className="relative min-h-screen flex items-center justify-center pt-20 pb-12 overflow-hidden"
+    >
       {/* Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[#020408]" />
-        {/* Ambient glows — solid color, no gradient text */}
-        <div className="absolute top-1/4 left-1/6 w-[500px] h-[500px] bg-neon-green/[0.04] rounded-full blur-[180px]" />
-        <div className="absolute bottom-1/3 right-1/5 w-[400px] h-[400px] bg-neon-cyan/[0.03] rounded-full blur-[150px]" />
-        <div className="absolute top-2/3 left-1/2 w-[300px] h-[300px] bg-neon-purple/[0.03] rounded-full blur-[120px]" />
-        <HexGridBackground />
-        <FloatingParticles className="z-[2]" particleCount={30} connectionDistance={80} />
-        {/* Scanline effect */}
-        <div className="absolute inset-0 z-[3] pointer-events-none opacity-[0.015]" style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,163,0.1) 2px, rgba(0,255,163,0.1) 4px)",
+        <AnimatedGrid />
+        {/* Ambient glows */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-neon-green/[0.03] blur-[180px]" />
+        <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-neon-cyan/[0.02] blur-[120px]" />
+        {/* Scanline overlay */}
+        <div className="absolute inset-0 pointer-events-none z-[4] opacity-[0.03]" style={{
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,163,0.08) 2px, rgba(0,255,163,0.08) 4px)",
         }} />
+        {/* Grain overlay */}
         <div className="absolute inset-0 grain-overlay z-[4]" />
       </div>
 
-      {/* Floating HUD badges — desktop only */}
-      <div className="hidden lg:block">
-        <FloatingBadge icon={Flame} label="Streak" value="12 Days" color="#f97316" className="top-[18%] left-[6%]" delay={1.5} />
-        <FloatingBadge icon={Target} label="Rank" value="#42" color="#00f0ff" className="top-[22%] right-[5%]" delay={1.8} />
-        <FloatingBadge icon={Gem} label="Loot" value="3 NFTs" color="#9945ff" className="bottom-[28%] left-[4%]" delay={2.0} />
-        <FloatingBadge icon={Shield} label="Quests" value="18 Done" color="#00ffa3" className="bottom-[24%] right-[6%]" delay={2.2} />
-      </div>
+      {/* Scrolling code decoration */}
+      <ScrollingCode />
+
+      {/* Mouse-reactive glow */}
+      <MouseGlow />
+
+      {/* Floating tech badges */}
+      <TechBadge
+        icon="⚓"
+        label="Anchor"
+        color="#00ffa3"
+        className="top-[30%] left-[8%]"
+        delay={1.5}
+      />
+      <TechBadge
+        icon="Rs"
+        label="Rust"
+        color="#f97316"
+        className="top-[18%] right-[10%]"
+        delay={1.8}
+      />
+      <TechBadge
+        icon="Ts"
+        label="TypeScript"
+        color="#00f0ff"
+        className="bottom-[32%] right-[10%]"
+        delay={2.1}
+      />
+      <TechBadge
+        icon="◎"
+        label="Solana"
+        color="#9945ff"
+        className="bottom-[25%] left-[6%]"
+        delay={2.4}
+      />
 
       {/* Content */}
-      <motion.div style={{ y, opacity }} className="container px-4 md:px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
+      <motion.div
+        style={{ y, opacity }}
+        className="container px-4 md:px-6 relative z-10"
+      >
+        <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+          {/* Hero Visual */}
+          <HeroVisual />
 
-          {/* Left — Text & CTA */}
-          <div className="space-y-8 text-center lg:text-left">
-            {/* Season Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm"
-            >
-              <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-              <span className="text-xs text-neon-green font-bold">⚔️ Season 1 is Live</span>
-              <span className="text-zinc-600">•</span>
-              <span className="text-xs text-zinc-500">Free & Open Source</span>
-            </motion.div>
-
-            {/* Main Headline — NO gradient text */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
-              className="space-y-2"
-            >
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter leading-[0.9]">
-                <span className="text-white block">Level Up Your</span>
-                <span className="text-neon-green text-glow block">Solana Skills</span>
-              </h1>
-            </motion.div>
-
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-base sm:text-lg text-zinc-400 max-w-lg leading-relaxed mx-auto lg:mx-0"
-            >
-              The first <span className="text-white font-semibold">gamified learning platform</span> for Solana development.
-              Complete quests, earn XP, collect soulbound loot, and compete on the leaderboard.
-            </motion.p>
-
-            {/* Live Stats row */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35 }}
-              className="flex items-center gap-6 justify-center lg:justify-start"
-            >
-              {[
-                { label: "Learners", value: 2847, suffix: "+" },
-                { label: "XP Earned", value: 584000, suffix: "" },
-                { label: "Quests", value: 120, suffix: "+" },
-              ].map((stat, idx) => (
-                <div key={idx} className="text-center lg:text-left">
-                  <div className="text-lg sm:text-xl font-black text-white">
-                    <AnimatedCounter target={stat.value} delay={0.8 + idx * 0.2} suffix={stat.suffix} />
-                  </div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{stat.label}</div>
-                </div>
-              ))}
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col sm:flex-row items-center gap-4"
-            >
-              <Link href="/auth" className="w-full sm:w-auto">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto h-14 px-10 text-base font-black bg-neon-green text-black hover:bg-neon-green/90 hover:shadow-[0_0_40px_rgba(0,255,163,0.3)] transition-all duration-300 group rounded-xl relative overflow-hidden"
-                >
-                  {/* Pulse ring behind */}
-                  <span className="absolute inset-0 rounded-xl border-2 border-neon-green/50 animate-ping opacity-20" />
-                  <Swords className="mr-2 w-5 h-5" />
-                  Enter the Arena
-                  <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </Link>
-              <Link href="/courses">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto h-14 px-10 text-base border-white/10 hover:bg-white/5 text-white rounded-xl group"
-                >
-                  <Zap className="mr-2 w-4 h-4 text-neon-green" />
-                  Browse Quests
-                </Button>
-              </Link>
-            </motion.div>
-          </div>
-
-          {/* Right — Quest Hub Card */}
+          {/* Terminal prompt header */}
           <motion.div
-            initial={{ opacity: 0, y: 50, rotateY: -5 }}
-            animate={{ opacity: 1, y: 0, rotateY: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex items-center gap-3 mb-6"
           >
-            <div className="relative group">
-              {/* Glow behind card */}
-              <div className="absolute -inset-6 bg-neon-green/[0.06] rounded-3xl blur-3xl opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+            <span className="text-neon-green font-mono text-sm">{">"}</span>
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+              onchain_academy
+            </span>
+            <div className="w-2 h-2 bg-neon-green animate-pulse" />
+          </motion.div>
 
-              <div className="relative rounded-2xl border border-white/[0.08] bg-[#080c14]/95 backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.5)] overflow-hidden">
-                {/* Card Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                    </div>
-                    <span className="text-xs text-zinc-500 font-mono">quest_hub.sol</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-                    <span className="text-[10px] text-neon-green font-bold uppercase tracking-wider">Live</span>
-                  </div>
-                </div>
+          {/* Main Headline */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="space-y-2 mb-6"
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] font-mono">
+              <span className="text-zinc-400 block">Level up your skills.</span>
+              <span className="relative inline-block px-3 py-1">
+                {/* Corner brackets around the typed text */}
+                <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-neon-green/50" />
+                <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-neon-green/50" />
+                <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-neon-green/50" />
+                <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-neon-green/50" />
+                <TypewriterText text="Build on Solana" delay={800} />
+              </span>
+            </h1>
+          </motion.div>
 
-                {/* Card Body */}
-                <div className="p-5 space-y-5">
-                  {/* Profile Row + XP Ring */}
-                  <div className="flex items-center gap-4">
-                    <XPProgressRing progress={73} level={7} />
-                    <div className="flex-1 space-y-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">Questers.sol</span>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-neon-green/10 text-neon-green border border-neon-green/20">PRO</span>
-                        </div>
-                        <div className="text-[10px] text-zinc-500 font-mono mt-0.5">7,340 / 10,000 XP to Level 8</div>
-                      </div>
-                      {/* Inline stats */}
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {[
-                          { icon: Flame, text: "12 day streak", color: "text-orange-400" },
-                          { icon: Trophy, text: "Rank #42", color: "text-amber-400" },
-                          { icon: Zap, text: "18 quests", color: "text-neon-green" },
-                        ].map((s, i) => (
-                          <div key={i} className="flex items-center gap-1">
-                            <s.icon className={`w-3 h-3 ${s.color}`} />
-                            <span className="text-[10px] text-zinc-500 font-medium">{s.text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+          {/* Terminal-style Subtitle */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mb-8"
+          >
+            <div className="text-sm sm:text-base text-zinc-500 max-w-lg leading-relaxed font-mono text-center">
+              <span className="text-neon-green/60">// </span>
+              Learn how to write your own on-chain programs
+              from the top builders in the Solana ecosystem.
+            </div>
+          </motion.div>
 
-                  {/* Divider */}
-                  <div className="h-px bg-white/[0.05]" />
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex flex-col sm:flex-row items-center gap-5 mb-12"
+          >
+            <Link href="/auth">
+              <HackerButton text="Start Learning" />
+            </Link>
+            <Link
+              href="/courses"
+              className="btn-slide-right relative flex items-center gap-2 text-sm text-zinc-400 hover:text-neon-green transition-colors duration-300 group uppercase tracking-wider font-semibold font-mono px-4 py-2 overflow-hidden border border-white/[0.08] hover:border-neon-green/40"
+            >
+              <span className="relative z-10">Browse Courses</span>
+              <ArrowRight className="relative z-10 w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
 
-                  {/* Active Quest */}
-                  <ActiveQuestCard />
+          {/* Animated Stats — in a bordered container */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+            className="relative border border-white/[0.06] bg-[#0a0f1a]/60 backdrop-blur-sm px-8 py-5"
+          >
+            {/* Corner brackets */}
+            <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/30" />
+            <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-neon-green/30" />
+            <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-neon-green/30" />
+            <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-neon-green/30" />
 
-                  {/* Divider */}
-                  <div className="h-px bg-white/[0.05]" />
-
-                  {/* Mini Leaderboard */}
-                  <MiniLeaderboard />
-
-                  {/* Achievement Badges */}
-                  <div className="pt-1">
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <Star className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider">Achievements</span>
-                    </div>
-                    <AchievementRow />
-                  </div>
-                </div>
-              </div>
+            <div className="text-[9px] text-zinc-600 font-mono uppercase tracking-[0.2em] text-center mb-3">
+              <span className="text-neon-green/40">$ </span>stats --live
+            </div>
+            <div className="flex items-center gap-8 sm:gap-12">
+              <AnimatedCounter target={1200} suffix="+" label="Builders" delay={1400} />
+              <div className="w-px h-8 bg-white/[0.08]" />
+              <AnimatedCounter target={50} suffix="+" label="Courses" delay={1600} />
+              <div className="w-px h-8 bg-white/[0.08]" />
+              <AnimatedCounter target={10} suffix="K+" label="Programs" delay={1800} />
             </div>
           </motion.div>
         </div>
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-2"
-        >
-          <div className="w-1 h-2 bg-neon-green rounded-full" />
-        </motion.div>
-      </motion.div>
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#020408] to-transparent z-10 pointer-events-none" />
     </section>
   );
 }

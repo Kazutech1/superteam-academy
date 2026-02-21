@@ -72,16 +72,19 @@ const row2 = testimonials.slice(3, 6);
 function TestimonialCard({ t }: { t: typeof testimonials[number] }) {
     return (
         <div className="w-[380px] flex-shrink-0 mx-2 group">
-            <div className="rounded-xl border border-white/[0.06] bg-[#0a0f1a]/90 p-5 hover:border-white/10 transition-all duration-300 h-full relative overflow-hidden">
-                {/* Hover glow */}
-                <div className="absolute -inset-1 bg-gradient-to-br from-neon-green/0 to-neon-cyan/0 group-hover:from-neon-green/5 group-hover:to-neon-cyan/5 transition-all duration-500 rounded-xl" />
+            <div className="border border-white/[0.06] bg-[#0a0f1a]/90 p-5 hover:border-neon-green/20 transition-all duration-300 h-full relative overflow-hidden">
+                {/* Corner brackets on hover */}
+                <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+                <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+                <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-neon-green/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
 
                 <div className="relative z-10 space-y-3">
                     {/* Header */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="text-2xl">{t.avatar}</div>
-                            <div>
+                            <div className="w-10 h-10 border border-white/10 flex items-center justify-center text-xl bg-white/[0.02]">{t.avatar}</div>
+                            <div className="font-mono">
                                 <div className="text-sm font-bold text-white flex items-center gap-1.5">
                                     {t.name}
                                     <span className="text-base">{t.badge}</span>
@@ -95,15 +98,18 @@ function TestimonialCard({ t }: { t: typeof testimonials[number] }) {
                                     <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
                                 ))}
                             </div>
-                            <div className="text-[9px] text-neon-green font-bold">{t.xp}</div>
+                            <div className="text-[9px] text-neon-green font-bold font-mono">{t.xp}</div>
                         </div>
                     </div>
 
                     {/* Quote */}
-                    <p className="text-sm text-zinc-400 leading-relaxed">&ldquo;{t.text}&rdquo;</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed font-mono">
+                        <span className="text-neon-green/40">&gt; </span>
+                        &ldquo;{t.text}&rdquo;
+                    </p>
 
                     {/* Footer stats */}
-                    <div className="flex items-center gap-3 pt-1">
+                    <div className="flex items-center gap-3 pt-1 font-mono">
                         <span className="flex items-center gap-1 text-[10px] text-orange-400/70 font-bold">
                             <Flame className="w-3 h-3" /> {t.streak}d streak
                         </span>
@@ -125,20 +131,22 @@ export function Testimonials() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="text-center max-w-3xl mx-auto mb-12 md:mb-16 space-y-4 px-4"
+                className="max-w-3xl mx-auto mb-12 md:mb-16 space-y-5 px-4"
             >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-neon-purple">
-                    <Crown className="w-3 h-3" />
-                    Guild Reviews
+                <div className="flex items-center gap-3">
+                    <span className="text-neon-green font-mono text-sm">{">"}</span>
+                    <span className="font-mono text-xs uppercase tracking-[0.3em] text-zinc-500">
+                        guild_reviews
+                    </span>
+                    <div className="flex-1 h-px bg-white/[0.06]" />
                 </div>
                 <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">
                     What the{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-cyan">
-                        Players
-                    </span>{" "}
+                    <span className="text-neon-purple">Players</span>{" "}
                     Say
                 </h2>
-                <p className="text-zinc-400 text-lg max-w-xl mx-auto">
+                <p className="text-zinc-400 text-sm max-w-xl font-mono leading-relaxed">
+                    <span className="text-neon-green/60">// </span>
                     12,400+ builders leveling up. Here&apos;s what the top-ranked players think.
                 </p>
             </motion.div>
