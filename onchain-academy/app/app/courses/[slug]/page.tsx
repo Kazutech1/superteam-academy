@@ -2,8 +2,10 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/components/providers/auth-context";
+import { coursesApi } from "@/lib/courses";
 import {
     ArrowLeft,
     BookOpen,
@@ -108,11 +110,65 @@ const staticReviews = [
 
 export default function CourseDetailPage() {
     const { slug } = useParams<{ slug: string }>();
-    const course = courseData[slug] || defaultCourse;
-    const diff = diffColors[course.difficulty];
-    const [expandedMilestone, setExpandedMilestone] = useState<string | null>(course.milestones[0]?.id ?? null);
-    const completedLessons = course.milestones.flatMap((m) => m.lessons).filter((l) => l.completed).length;
-    const totalLessons = course.milestones.flatMap((m) => m.lessons).length;
+    const { isAuthenticated, isLoading } = useAuth();
+    const [courseState, setCourseState] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [expandedMilestone, setExpandedMilestone] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isLoading) {
+            coursesApi.getCourseBySlug(slug as string).then(res => {
+                const c = res.data;
+                const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "Beginner";
+
+                // Merge data and compute progress
+                const merged = {
+                    ...defaultCourse, // fallback for any completely missing top level fields
+                    ...c,
+                    difficulty: capitalize(c.difficulty),
+                    enrolled: !!res.enrollment,
+                    progress: res.enrollment?.progress || 0,
+                    instructor: c.author || defaultCourse.instructor,
+                    duration: "4 weeks", // fallback
+                    students: "1.2K", // fallback
+                    xp: 1000, // fallback
+                };
+
+                // Update milestone and lesson progress
+                if (res.milestoneProgress && Array.isArray(res.milestoneProgress)) {
+                    const mp = res.milestoneProgress;
+                    merged.milestones = merged.milestones.map((m: any) => {
+                        const prog = mp.find(p => p.milestoneId === m._id || p.milestoneId === m.id);
+                        if (prog) {
+                            return { ...m, completed: prog.isCompleted };
+                        }
+                        return m;
+                    });
+                }
+
+                setCourseState(merged);
+                setExpandedMilestone(merged.milestones[0]?._id || merged.milestones[0]?.id || null);
+                setLoading(false);
+            }).catch(err => {
+                console.error(err);
+                setCourseState(defaultCourse);
+                setLoading(false);
+            });
+        }
+    }, [slug, isLoading, isAuthenticated]);
+
+    if (loading || isLoading) {
+        return (
+            <div className="min-h-screen bg-[#020408] flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-neon-green/30 border-t-neon-green animate-spin" />
+            </div>
+        );
+    }
+
+    const course = courseState || defaultCourse;
+    const diff = diffColors[course.difficulty] || diffColors.Beginner;
+    const completedLessons = course.milestones.flatMap((m: any) => m.lessons || []).filter((l: any) => l.completed).length;
+    const totalLessons = course.milestones.flatMap((m: any) => m.lessons || []).length;
 
     return (
         <div className="min-h-screen bg-[#020408] relative overflow-hidden">
@@ -178,7 +234,7 @@ export default function CourseDetailPage() {
                     {/* Instructor */}
                     <div className="mt-6 flex items-center gap-3">
                         <div className="w-10 h-10 border border-white/10 bg-white/[0.02] flex items-center justify-center text-xs font-black text-white font-mono">
-                            {course.instructor.name.split(" ").map((n) => n[0]).join("")}
+                            {course.instructor.name.split(" ").map((n: string) => n[0]).join("")}
                         </div>
                         <div className="font-mono">
                             <div className="text-sm font-bold text-white">{course.instructor.name}</div>
@@ -196,13 +252,13 @@ export default function CourseDetailPage() {
                             <span className="text-[10px] text-zinc-600 font-bold ml-auto">{completedLessons}/{totalLessons} lessons</span>
                         </h2>
 
-                        {course.milestones.map((milestone, mIdx) => {
-                            const isOpen = expandedMilestone === milestone.id;
-                            const milestoneProgress = milestone.lessons.filter((l) => l.completed).length;
-                            const milestonePct = Math.round((milestoneProgress / milestone.lessons.length) * 100);
+                        {course.milestones.map((milestone: any, mIdx: number) => {
+                            const isOpen = expandedMilestone === milestone.id || expandedMilestone === milestone._id;
+                            const milestoneProgress = (milestone.lessons || []).filter((l: any) => l.completed).length;
+                            const milestonePct = milestone.lessons?.length ? Math.round((milestoneProgress / milestone.lessons.length) * 100) : 0;
 
                             return (
-                                <div key={milestone.id} className="border border-white/[0.06] bg-white/[0.02] overflow-hidden relative group">
+                                <div key={milestone.id || milestone._id || mIdx} className="border border-white/[0.06] bg-white/[0.02] overflow-hidden relative group">
                                     {/* Corner brackets */}
                                     <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity z-20" />
                                     <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity z-20" />
@@ -211,7 +267,7 @@ export default function CourseDetailPage() {
 
                                     {/* Milestone header */}
                                     <button
-                                        onClick={() => setExpandedMilestone(isOpen ? null : milestone.id)}
+                                        onClick={() => setExpandedMilestone(isOpen ? null : (milestone.id || milestone._id))}
                                         className="w-full flex items-center gap-4 p-5 text-left hover:bg-white/[0.02] transition-colors font-mono"
                                     >
                                         <div className={`w-10 h-10 flex items-center justify-center text-sm font-black shrink-0 ${milestone.completed ? "bg-neon-green/10 text-neon-green border border-neon-green/20" : "bg-white/[0.04] text-zinc-500 border border-white/[0.06]"}`}>
@@ -244,13 +300,13 @@ export default function CourseDetailPage() {
                                                 className="overflow-hidden"
                                             >
                                                 <div className="border-t border-white/[0.04] px-5 pb-4 pt-2 space-y-1">
-                                                    {milestone.lessons.map((lesson) => {
+                                                    {(milestone.lessons || []).map((lesson: any) => {
                                                         const ti = typeIcon[lesson.type] || typeIcon.doc;
                                                         const Icon = ti.icon;
                                                         return (
                                                             <Link
-                                                                key={lesson.id}
-                                                                href={`/courses/${slug}/lessons/${lesson.id}`}
+                                                                key={lesson.id || lesson._id}
+                                                                href={`/courses/${slug}/lessons/${lesson.id || lesson._id}`}
                                                                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors group/lesson font-mono"
                                                             >
                                                                 <Icon className={`w-4 h-4 ${ti.color} shrink-0`} />
@@ -313,9 +369,32 @@ export default function CourseDetailPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
+                                onClick={async () => {
+                                    if (course.enrolled) {
+                                        const firstUncompleted = course.milestones
+                                            .flatMap((m: any) => m.lessons || [])
+                                            .find((l: any) => !l.completed);
+                                        const targetLesson = firstUncompleted || course.milestones[0]?.lessons?.[0];
+                                        if (targetLesson) {
+                                            window.location.href = `/courses/${slug}/lessons/${targetLesson.id || targetLesson._id}`;
+                                        }
+                                    } else {
+                                        try {
+                                            setLoading(true);
+                                            await coursesApi.enrollInCourse(slug as string);
+                                            // Refresh state
+                                            const res = await coursesApi.getCourseBySlug(slug as string);
+                                            setCourseState((prev: any) => ({ ...prev, enrolled: true, progress: res.enrollment?.progress || 0 }));
+                                            setLoading(false);
+                                        } catch (err) {
+                                            console.error("Enrollment failed:", err);
+                                            setLoading(false);
+                                        }
+                                    }
+                                }}
                                 className="w-full py-3 bg-neon-green text-black text-sm font-black font-mono uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-neon-green/90 hover:shadow-[0_0_30px_rgba(0,255,163,0.2)] transition-all"
                             >
-                                {course.progress > 0 ? "Continue Learning" : "Start Course"}
+                                {course.enrolled ? (course.progress > 0 ? "Continue Learning" : "Start Course") : "Enroll Now"}
                                 <ChevronRight className="w-4 h-4" />
                             </motion.button>
 

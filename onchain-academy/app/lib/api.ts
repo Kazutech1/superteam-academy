@@ -42,6 +42,31 @@ async function post<T>(endpoint: string, body: Record<string, unknown>): Promise
     return data as T;
 }
 
+export async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = localStorage.getItem("token");
+
+    const headers = new Headers(options.headers || {});
+    if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+    }
+    if (!headers.has("Content-Type") && options.method !== "GET" && options.body && typeof options.body === "string") {
+        headers.set("Content-Type", "application/json");
+    }
+
+    const res = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+        throw new Error(data.message || data.error || "Request failed");
+    }
+
+    return data as T;
+}
+
 /* ─── Auth Endpoints ─── */
 
 /** POST /auth/google — send Google id_token to backend */
