@@ -3,7 +3,18 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { Zap, Users, BookOpen, Trophy } from "lucide-react";
+import { Zap, Users, BookOpen, Trophy, LucideIcon } from "lucide-react";
+
+interface Stat {
+    label: string;
+    value: number;
+    suffix: string;
+    prefix?: string;
+    icon: LucideIcon;
+    color: string;
+    iconColor: string;
+    decimals?: number;
+}
 
 interface StatItem {
     label: string;
