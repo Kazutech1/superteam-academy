@@ -1,0 +1,12 @@
+{
+  "Navigation": {
+    "courses": "Cursos",
+    "leaderboard": "Tabela de Classificação",
+    "dashboard": "Painel",
+    "signIn": "Entrar"
+  },
+  "Index": {
+    "title": "Domine o Desenvolvimento na Solana",
+    "description": "Aprenda a construir na Solana com cursos interativos."
+  }
+}
