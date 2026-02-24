@@ -86,3 +86,89 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
+/**
+ * PUT /api/v1/profile/me
+ * Updates the authenticated user's profile.
+ */
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        const {
+            username,
+            name,
+            bio,
+            avatar,
+            twitter,
+            github,
+            discord,
+            website,
+            language,
+            theme,
+            isPublic
+        } = req.body;
+
+        // ── 1. Find user ────────────────────────────────────────────────────────
+        const user = await User.findById(userId);
+
+        if (!user) {
+            res.status(404).json({ success: false, message: "User not found" });
+            return;
+        }
+
+        // ── 2. Update allowed fields ─────────────────────────────────────────────
+        if (username !== undefined) user.username = username;
+        if (name !== undefined) user.name = name;
+        if (bio !== undefined) user.bio = bio;
+        if (avatar !== undefined) user.avatar = avatar;
+
+        // Social links
+        if (twitter !== undefined) user.twitter = twitter;
+        if (github !== undefined) user.github = github;
+        if (discord !== undefined) user.discord = discord;
+        if (website !== undefined) user.website = website;
+
+        // Preferences
+        if (language !== undefined) user.language = language;
+        if (theme !== undefined) user.theme = theme;
+        if (isPublic !== undefined) user.isPublic = isPublic;
+
+        // ── 3. Save changes ──────────────────────────────────────────────────────
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: {
+                profile: {
+                    id: user._id,
+                    username: user.username,
+                    name: user.name,
+                    bio: user.bio,
+                    avatar: user.avatar,
+                    twitter: user.twitter,
+                    github: user.github,
+                    discord: user.discord,
+                    website: user.website,
+                    language: user.language,
+                    theme: user.theme,
+                    isPublic: user.isPublic,
+                    updatedAt: user.updatedAt
+                }
+            }
+        });
+    } catch (err: any) {
+        console.error("[updateProfile] error:", err);
+
+        // Handle duplicate username/email errors from Mongoose
+        if (err.code === 11000) {
+            res.status(400).json({
+                success: false,
+                message: "Username already exists"
+            });
+            return;
+        }
+
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};

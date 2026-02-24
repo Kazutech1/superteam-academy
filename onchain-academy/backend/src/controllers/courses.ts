@@ -3,6 +3,7 @@ import { Course } from "../models/courses";
 import { Enrollment } from "../models/enrollment";
 import { MilestoneProgress } from "../models/milestoneProgress";
 import { User } from "../models/users";
+import { updateStreak } from "../services/streak";
 
 // ─── Admin: Create Course ─────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ export const createCourse = async (req: Request, res: Response): Promise<void> =
           success: false,
           message: `Milestone ${i + 1} must have at least 1 resource`,
         });
-        return; 
+        return;
       }
 
       if (milestone.resources.length > 5) {
@@ -421,6 +422,14 @@ export const completeMilestone = async (req: Request, res: Response): Promise<vo
     }
 
     await progress.save();
+
+    // Update streak — counts any lesson activity (pass or fail)
+    try {
+      await updateStreak(userId);
+    } catch (streakErr) {
+      // Non-fatal — log but don't fail the request
+      console.error("[completeMilestone] streak update failed:", streakErr);
+    }
 
     // Check if ALL 5 milestones are now complete
     const allMilestoneProgress = await MilestoneProgress.find({
