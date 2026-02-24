@@ -196,7 +196,7 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
 
             <div className={`relative border ${isLocked ? "border-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.15]"} bg-[#080c14] overflow-hidden transition-all duration-500 ${isLocked ? "opacity-70" : ""}`}>
                 {/* Top accent line */}
-                <div className={`h-[2px] ${path.bgAccent}`} />
+                <div className={`h-[2px] ${path.bgAccent || "bg-zinc-700"}`} />
 
                 {/* Corner brackets */}
                 <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
@@ -227,11 +227,11 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                             <div className="flex-1 min-w-0 space-y-1.5">
                                 {/* Tags row */}
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 border ${path.tagColor}`}>
-                                        {path.tag}
+                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 border ${path.tagColor || "border-white/10 text-zinc-500"}`}>
+                                        {path.tag || "Course"}
                                     </span>
-                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest ${path.rarityColor}`}>
-                                        {path.rarity}
+                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest ${path.rarityColor || "text-zinc-600"}`}>
+                                        {path.rarity || "Standard"}
                                     </span>
                                 </div>
 
@@ -242,8 +242,8 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
 
                                 {/* Difficulty + Level */}
                                 <div className="flex items-center gap-3">
-                                    <DifficultyStars count={path.difficulty} color={path.textColor} />
-                                    <span className={`text-xs font-bold font-mono ${path.textColor}`}>{path.level}</span>
+                                    <DifficultyStars count={path.difficulty || 1} color={path.textColor || "text-zinc-500"} />
+                                    <span className={`text-xs font-bold font-mono ${path.textColor || "text-zinc-400"}`}>{path.level || "Starter"}</span>
                                 </div>
                             </div>
                         </div>
@@ -253,19 +253,19 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                             <motion.div
                                 animate={!isLocked ? { scale: [1, 1.05, 1] } : {}}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 ${path.bgAccent} relative overflow-hidden`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 ${path.bgAccent || "bg-zinc-800"} relative overflow-hidden`}
                             >
                                 <Zap className="w-4 h-4 text-black" />
-                                <span className="text-sm font-black font-mono text-black">{path.xp.toLocaleString()} XP</span>
+                                <span className="text-sm font-black font-mono text-black">{(path.xp || 0).toLocaleString()} XP</span>
                             </motion.div>
-                            <ProgressRing percent={path.completionRate} color={path.ringColor} />
+                            <ProgressRing percent={path.completionRate || 0} color={path.ringColor || "#ffffff"} />
                         </div>
                     </div>
                 </div>
 
                 {/* === Description === */}
                 <div className="px-6 pt-3 pb-4">
-                    <p className="text-sm text-zinc-400 leading-relaxed font-mono">{path.longDesc}</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed font-mono">{path.longDesc || path.description}</p>
                 </div>
 
                 {/* === Stats Bar === */}
@@ -273,22 +273,22 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                     <div className="flex items-center gap-4 text-[11px] font-mono flex-wrap">
                         <span className="text-zinc-500 flex items-center gap-1.5">
                             <BookOpen className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.modules}</span> Modules
+                            <span className="font-bold text-zinc-300">{path.modules || 0}</span> Modules
                         </span>
                         <span className="text-zinc-600">•</span>
                         <span className="text-zinc-500 flex items-center gap-1.5">
                             <Target className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.lessons}</span> Lessons
+                            <span className="font-bold text-zinc-300">{path.lessons || 0}</span> Lessons
                         </span>
                         <span className="text-zinc-600">•</span>
                         <span className="text-zinc-500 flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.duration}</span>
+                            <span className="font-bold text-zinc-300">{path.duration || "N/A"}</span>
                         </span>
                         <span className="text-zinc-600">•</span>
                         <span className="text-zinc-500 flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.playersActive.toLocaleString()}</span> Active
+                            <span className="font-bold text-zinc-300">{(path.playersActive || 0).toLocaleString()}</span> Active
                         </span>
                     </div>
                 </div>
@@ -301,17 +301,17 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                             transition={{ duration: 1.5, repeat: Infinity }}
                             className="text-2xl"
                         >
-                            {path.bossEmoji}
+                            {path.bossEmoji || "👾"}
                         </motion.div>
                         <div className="flex-1 min-w-0 font-mono">
                             <div className="flex items-center gap-2">
                                 <Swords className="w-3 h-3 text-red-400" />
                                 <span className="text-[10px] font-black text-red-400 uppercase tracking-wider">Final Boss</span>
                             </div>
-                            <div className="text-xs font-bold text-white">{path.boss}</div>
+                            <div className="text-xs font-bold text-white">{path.boss || "Unknown Foe"}</div>
                         </div>
                         <div className="text-right font-mono">
-                            <div className="text-[10px] text-red-400/60">HP {path.bossHp.toLocaleString()}</div>
+                            <div className="text-[10px] text-red-400/60">HP {(path.bossHp || 0).toLocaleString()}</div>
                             <div className="w-20 h-1.5 bg-red-900/30 overflow-hidden mt-0.5">
                                 <div className="h-full bg-red-500 w-full" />
                             </div>
@@ -325,7 +325,7 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                         <span className="text-neon-green/60">// </span>loot_drops
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {path.rewards.map((r, i) => (
+                        {(path.rewards || []).map((r, i) => (
                             <motion.div
                                 key={i}
                                 whileHover={{ scale: 1.05, y: -2 }}
@@ -343,7 +343,7 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                                 </div>
                             </motion.div>
                         ))}
-                        {path.loot.map((l, i) => (
+                        {(path.loot || []).map((l, i) => (
                             <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/[0.02] border border-white/[0.06] font-mono">
                                 <span className="text-sm">{i === 0 ? "🎨" : "📛"}</span>
                                 <div>
@@ -373,7 +373,7 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                             <Link href={linkHref}>
                                 <Button
                                     size="lg"
-                                    className={`btn-hacker ${path.bgAccent} text-black font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
+                                    className={`btn-hacker ${path.bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
                                 >
                                     ⚔️ Begin Quest
                                     <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
