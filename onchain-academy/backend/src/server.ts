@@ -88,6 +88,9 @@ app.use(express.static("public"));
 import authRoutes from "./routes/auth";
 import courseRoutes from "./routes/courses";
 import profileRoutes from "./routes/profile";
+import dashboardRoutes from "./routes/dashboard";
+import leaderboardRoutes from "./routes/leaderboard";
+import uploadRoutes from "./routes/upload";
 import swaggerSpecs from "./swagger";
 
 // Swagger UI (available in all environments)
@@ -107,6 +110,9 @@ if (isDevelopment) {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/courses", courseRoutes);
 app.use("/api/v1/profile", profileRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/leaderboard", leaderboardRoutes);
+app.use("/api/v1/upload", uploadRoutes);
 
 // Root route
 app.get("/", (req: Request, res: Response) => {

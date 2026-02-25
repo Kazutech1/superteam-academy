@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import * as coursesController from "../controllers/courses";
 import { authenticate } from "../middlewares/auth";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
 
@@ -19,18 +20,7 @@ const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
     next();
 };
 
-/**
- * Admin guard — must be authenticated AND have role === "admin".
- * Attach after `authenticate`.
- */
-const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
-    if (!user || user.role !== "admin") {
-        res.status(403).json({ success: false, message: "Admin access required" });
-        return;
-    }
-    next();
-};
+
 
 // ─── Swagger Tags ─────────────────────────────────────────────────────────────
 
@@ -95,11 +85,52 @@ const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
  *                 enum: [solana-basics, smart-contracts, defi, nfts, tokens, web3-frontend, security, tooling]
  *               milestones:
  *                 type: array
+ *                 description: Exactly 5 milestones required
  *                 minItems: 5
  *                 maxItems: 5
- *                 description: Must be exactly 5 milestones
+ *                 items:
+ *                   type: object
+ *                   required: [title, xpReward, resources, tests]
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                       example: Getting Started with Solana
+ *                     description:
+ *                       type: string
+ *                     xpReward:
+ *                       type: integer
+ *                       example: 100
+ *                       description: XP awarded when the full course is completed
+ *                     resources:
+ *                       type: array
+ *                       maxItems: 5
+ *                       items:
+ *                         $ref: '#/components/schemas/Resource'
+ *                     tests:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         required: [title, type]
+ *                         properties:
+ *                           title:
+ *                             type: string
+ *                           type:
+ *                             type: string
+ *                             enum: [quiz, code_challenge]
+ *                           passThreshold:
+ *                             type: integer
+ *                             default: 80
+ *                           questions:
+ *                             type: array
+ *                             description: Required when type=quiz
+ *                             items:
+ *                               $ref: '#/components/schemas/QuizQuestion'
+ *                           codeChallenge:
+ *                             description: Required when type=code_challenge
+ *                             $ref: '#/components/schemas/CodeChallenge'
  *               author:
  *                 type: object
+ *                 required: [name]
  *                 properties:
  *                   name:
  *                     type: string
@@ -112,6 +143,15 @@ const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
  *     responses:
  *       201:
  *         description: Course created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Course'
  *       400:
  *         description: Validation error (e.g. not exactly 5 milestones, duplicate slug)
  *       401:
@@ -216,7 +256,28 @@ router.get("/", coursesController.getCourses);
  *       `milestoneProgress` records.
  *     responses:
  *       200:
- *         description: Course detail (+ optional progress if authenticated and enrolled)
+ *         description: Course detail with full milestones, resources, and tests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     course:
+ *                       $ref: '#/components/schemas/Course'
+ *                     enrollment:
+ *                       nullable: true
+ *                       allOf:
+ *                         - $ref: '#/components/schemas/Enrollment'
+ *                     milestoneProgress:
+ *                       nullable: true
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/MilestoneProgress'
  *       404:
  *         description: Course not found
  *       500:

@@ -107,6 +107,59 @@ const router = Router();
  *       500:
  *         description: Server error
  */
+/**
+ * @swagger
+ * /profile/me:
+ *   put:
+ *     summary: Update the authenticated user's profile
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *               twitter:
+ *                 type: string
+ *               github:
+ *                 type: string
+ *               discord:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               language:
+ *                 type: string
+ *                 enum: [en, pt-br, es]
+ *               theme:
+ *                 type: string
+ *                 enum: [light, dark]
+ *               isPublic:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Invalid input or duplicate username
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.put("/me", authenticate, profileController.updateProfile);
 router.get("/me", authenticate, profileController.getProfile);
 
 export default router;
+

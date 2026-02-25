@@ -17,6 +17,7 @@ export interface IUser extends Document {
   language: "en" | "pt-br" | "es";
   theme: "light" | "dark";
   isPublic: boolean;
+  role: "user" | "admin";
 
   // Gamification
   totalXP: number;
@@ -24,6 +25,7 @@ export interface IUser extends Document {
   currentStreak: number;
   longestStreak: number;
   lastActive?: Date;
+  activityDates: string[]; // "YYYY-MM-DD" strings for heatmap (last 365 days)
 
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +49,7 @@ const UserSchema = new Schema<IUser>(
     language: { type: String, enum: ["en", "pt-br", "es"], default: "en" },
     theme: { type: String, enum: ["light", "dark"], default: "dark" },
     isPublic: { type: Boolean, default: true },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
 
     // Gamification
     totalXP: { type: Number, default: 0 },
@@ -54,6 +57,7 @@ const UserSchema = new Schema<IUser>(
     currentStreak: { type: Number, default: 0 },
     longestStreak: { type: Number, default: 0 },
     lastActive: { type: Date },
+    activityDates: { type: [String], default: [] }, // "YYYY-MM-DD" for heatmap
   },
   {
     timestamps: true,

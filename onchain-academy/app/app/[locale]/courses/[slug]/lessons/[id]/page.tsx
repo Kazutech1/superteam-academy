@@ -6,6 +6,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/providers/auth-context";
 import { coursesApi } from "@/lib/courses";
+import { SolanaPlaygroundEmbed } from "@/components/ui/solana-playground-embed";
 import {
     ArrowLeft,
     ArrowRight,
@@ -14,12 +15,10 @@ import {
     ChevronRight,
     Code2,
     Copy,
-    Flame,
     Lightbulb,
     List,
     Loader2,
     Play,
-    RotateCcw,
     Shield,
     Sparkles,
     Terminal,
@@ -256,7 +255,7 @@ export default function LessonPage() {
     const [testResults, setTestResults] = useState<any[]>([]);
     const [challengeCompleted, setChallengeCompleted] = useState(false);
     const [showChallenge, setShowChallenge] = useState(false);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
 
     useEffect(() => {
         if (!authLoading) {
@@ -293,6 +292,7 @@ export default function LessonPage() {
                         id: currentResource._id || currentResource.id,
                         title: currentResource.title,
                         type: currentResource.isTest ? "test" : (currentResource.type === "video" ? "video" : "doc"),
+                        language: currentResource.codeChallenge?.language || "typescript",
                         content: currentResource.content || (currentResource.isTest ? "# Challenge Time!\nRead the description and start coding." : "# Content\nContent goes here."),
                         hasChallenge: currentResource.isTest,
                         challenge: currentResource.isTest && currentResource.codeChallenge ? {
@@ -344,39 +344,43 @@ export default function LessonPage() {
     }, []);
     const handleMouseUp = useCallback(() => { dragging.current = false; }, []);
 
-    /* Simulated test run */
-    const runTests = useCallback(() => {
+    /* Mark challenge complete */
+    const runTests = useCallback(async () => {
         setIsRunning(true);
         setOutput(null);
-        setTimeout(async () => {
-            if (lesson?.challenge) {
-                const results = lesson.challenge.testCases.map((tc: any) => ({
-                    ...tc,
-                    passed: true,
-                }));
-                setTestResults(results);
-                setOutput(`✓ All ${results.length} test cases passed!`);
-                setChallengeCompleted(true);
 
-                // Submit test status
-                try {
-                    await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
-                    // Claim XP
-                    await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
-                } catch (e) {
-                    console.error("Failed to complete milestone/claim xp", e);
-                }
-            } else {
-                try {
-                    await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
-                    await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
-                    setChallengeCompleted(true);
-                    setOutput("✓ Quiz completed successfully!");
-                } catch (e) { console.error("Error", e); }
+        if (lesson?.challenge) {
+            const resetResults = lesson.challenge.testCases.map((tc: any) => ({ ...tc, passed: null }));
+            setTestResults(resetResults);
+
+            // Simulate sequential validation
+            const results: any[] = [];
+            for (let i = 0; i < lesson.challenge.testCases.length; i++) {
+                await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+                const tc = lesson.challenge.testCases[i];
+                results.push({ ...tc, passed: true });
+                setTestResults([...results, ...lesson.challenge.testCases.slice(i + 1).map((t: any) => ({ ...t, passed: null }))]);
             }
-            setIsRunning(false);
-        }, 1500);
-    }, [code, lesson, slug, milestone]);
+
+            setOutput(`✓ All ${results.length} test cases passed!`);
+            setChallengeCompleted(true);
+            try {
+                await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
+                await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
+            } catch (e) {
+                console.error("Failed to complete milestone/claim xp", e);
+            }
+        } else {
+            await new Promise(r => setTimeout(r, 1500));
+            try {
+                await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
+                await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
+                setChallengeCompleted(true);
+                setOutput("✓ Quiz completed successfully!");
+            } catch (e) { console.error("Error", e); }
+        }
+        setIsRunning(false);
+    }, [lesson, slug, milestone]);
 
     const resetCode = () => {
         setCode(lesson.challenge.starterCode);
@@ -528,14 +532,12 @@ export default function LessonPage() {
                         <>
                             {/* Challenge header */}
                             <div className="shrink-0 px-4 py-3 border-b border-white/[0.08] bg-[#080c14] flex items-center justify-between font-mono relative z-10">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                     <Terminal className="w-4 h-4 text-neon-green" />
                                     <span className="text-xs font-black text-white uppercase tracking-wider">{lesson.challenge.title}</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border bg-neon-cyan/[0.05] border-neon-cyan/20 text-neon-cyan">Solana Playground</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={resetCode} className="p-1.5 border border-white/5 hover:bg-white/5 text-zinc-500 hover:text-white transition-colors" title="Reset code">
-                                        <RotateCcw className="w-3.5 h-3.5" />
-                                    </button>
                                     <button onClick={() => setShowChallenge(false)} className="p-1.5 border border-white/5 hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
                                         <X className="w-3.5 h-3.5" />
                                     </button>
@@ -550,45 +552,67 @@ export default function LessonPage() {
                                 </div>
                             </div>
 
-                            {/* Code textarea */}
-                            <div className="flex-1 overflow-hidden relative z-10 bg-transparent">
-                                <div className="absolute top-4 left-4 text-[10px] text-zinc-800 pointer-events-none font-mono tracking-widest">
-                                    {id}.ts [EDITABLE]
-                                </div>
-                                <textarea
-                                    ref={textareaRef}
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value)}
-                                    spellCheck={false}
-                                    className="w-full h-full p-6 pt-10 bg-transparent text-[13px] text-zinc-300 font-mono resize-none focus:outline-none leading-relaxed placeholder:text-zinc-800 scrollbar-thin scrollbar-thumb-white/5"
-                                    placeholder="Write your code here..."
+                            {/* Solana Playground */}
+                            <div className="flex-1 overflow-hidden relative z-10">
+                                <SolanaPlaygroundEmbed
+                                    initialCode={code}
+                                    lessonId={lesson.id}
                                 />
                             </div>
 
-                            {/* Test cases */}
+                            {/* Test cases — animated */}
                             <div className="shrink-0 border-t border-white/[0.1] relative z-10 bg-[#080c14]">
-                                <div className="px-4 py-2 flex items-center gap-2 border-b border-white/[0.05]">
-                                    <List className="w-3.5 h-3.5 text-zinc-600" />
-                                    <span className="text-[10px] text-zinc-500 font-black font-mono uppercase tracking-[0.2em]">verification_status</span>
+                                <div className="px-4 py-2 flex items-center justify-between border-b border-white/[0.05]">
+                                    <div className="flex items-center gap-2">
+                                        <List className="w-3.5 h-3.5 text-zinc-600" />
+                                        <span className="text-[10px] text-zinc-500 font-black font-mono uppercase tracking-[0.2em]">verification_status</span>
+                                    </div>
+                                    {testResults.some((tc) => tc.passed !== null) && (
+                                        <span className="text-[9px] font-mono font-black tracking-wider">
+                                            <span className="text-neon-green">{testResults.filter((tc) => tc.passed === true).length}</span>
+                                            <span className="text-zinc-700">/</span>
+                                            <span className="text-zinc-500">{testResults.length}</span>
+                                            <span className="text-zinc-700 ml-1">PASSED</span>
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="px-4 py-3 space-y-2 max-h-32 overflow-y-auto font-mono">
-                                    {testResults.map((tc) => (
-                                        <div key={tc.id} className="flex items-center gap-3 text-[11px]">
+                                <div className="px-4 py-3 space-y-1 max-h-40 overflow-y-auto font-mono">
+                                    {testResults.map((tc, idx) => (
+                                        <motion.div
+                                            key={tc.id}
+                                            initial={tc.passed !== null ? { opacity: 0, x: -10 } : {}}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: tc.passed !== null ? idx * 0.05 : 0, duration: 0.2 }}
+                                            className="flex items-center gap-3 text-[11px] py-1"
+                                        >
                                             {tc.passed === null ? (
                                                 <div className="w-4 h-4 border border-zinc-800" />
                                             ) : tc.passed ? (
-                                                <div className="w-4 h-4 border border-neon-green bg-neon-green/10 flex items-center justify-center">
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                                                    className="w-4 h-4 border border-neon-green bg-neon-green/10 flex items-center justify-center"
+                                                >
                                                     <CheckCircle2 className="w-3 h-3 text-neon-green" />
-                                                </div>
+                                                </motion.div>
                                             ) : (
-                                                <div className="w-4 h-4 border border-red-500 bg-red-500/10 flex items-center justify-center">
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                                                    className="w-4 h-4 border border-red-500 bg-red-500/10 flex items-center justify-center"
+                                                >
                                                     <X className="w-3 h-3 text-red-500" />
-                                                </div>
+                                                </motion.div>
                                             )}
-                                            <span className={tc.passed === null ? "text-zinc-600" : tc.passed ? "text-neon-green" : "text-red-500"}>
-                                                {tc.passed === null ? "[WAITING]" : tc.passed ? "[PASSED]" : "[FAILED]"} {tc.name}
+                                            <span className={`flex-1 ${tc.passed === null ? "text-zinc-600" :
+                                                tc.passed ? "text-neon-green" : "text-red-400"
+                                                }`}>
+                                                {tc.passed === null ? "[WAITING]" :
+                                                    tc.passed ? "[PASSED]" : "[FAILED]"} {tc.name}
                                             </span>
-                                        </div>
+                                        </motion.div>
                                     ))}
                                 </div>
                             </div>
@@ -600,9 +624,12 @@ export default function LessonPage() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 10 }}
-                                        className={`shrink-0 border-t border-white/[0.1] px-4 py-3 bg-[#0a0f1a] relative z-10`}
+                                        className={`shrink-0 border-t px-4 py-3 relative z-10 ${challengeCompleted
+                                            ? "border-neon-green/20 bg-neon-green/[0.03]"
+                                            : "border-red-500/20 bg-red-500/[0.03]"
+                                            }`}
                                     >
-                                        <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex items-center gap-2 mb-1.5">
                                             <div className={`w-1.5 h-1.5 ${challengeCompleted ? "bg-neon-green" : "bg-red-500"} animate-pulse`} />
                                             <span className="text-[9px] text-zinc-500 font-mono uppercase tracking-widest">system_output</span>
                                         </div>
@@ -624,11 +651,12 @@ export default function LessonPage() {
                                 <div className="flex items-center gap-3">
                                     {challengeCompleted && (
                                         <motion.div
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-neon-green/10 border border-neon-green/30 text-neon-green text-[10px] font-black uppercase tracking-wider"
+                                            initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-neon-green/10 border border-neon-green/30 text-neon-green text-[10px] font-black uppercase tracking-wider shadow-[0_0_20px_rgba(0,255,163,0.1)]"
                                         >
-                                            <Sparkles className="w-3.5 h-3.5" /> Success
+                                            <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Challenge Complete
                                         </motion.div>
                                     )}
                                     <motion.button
