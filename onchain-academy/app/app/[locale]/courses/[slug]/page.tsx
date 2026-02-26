@@ -20,6 +20,7 @@ import {
     Trophy,
     Users,
     Zap,
+    List,
 } from "lucide-react";
 
 /* ── stub data ───────────────────────────────────────────── */
@@ -96,10 +97,11 @@ const diffColors: Record<string, { text: string; bg: string; border: string; glo
     Advanced: { text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20", glow: "rgba(251,191,36,0.15)" },
 };
 
-const typeIcon: Record<string, { icon: typeof Play; color: string }> = {
+const typeIcon: Record<string, { icon: any; color: string }> = {
     video: { icon: Play, color: "text-neon-cyan" },
     doc: { icon: BookOpen, color: "text-neon-purple" },
     test: { icon: Shield, color: "text-amber-400" },
+    quiz: { icon: List, color: "text-amber-400" },
 };
 
 const staticReviews = [
@@ -118,31 +120,59 @@ export default function CourseDetailPage() {
     useEffect(() => {
         if (!isLoading) {
             coursesApi.getCourseBySlug(slug as string).then(res => {
-                const c = res.data;
+                const { course: c, enrollment, milestoneProgress } = res.data;
                 const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "Beginner";
+
+                const formatDuration = (d: any) => {
+                    if (!d) return "Self-paced";
+                    if (typeof d === "string") return d;
+                    if (d < 60) return `${d} mins`;
+                    const hrs = Math.floor(d / 60);
+                    return `${hrs} hr${hrs > 1 ? "s" : ""}`;
+                };
+
+                const formatStudents = (count: number) => {
+                    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+                    return count.toString();
+                };
 
                 // Merge data and compute progress
                 const merged = {
-                    ...defaultCourse, // fallback for any completely missing top level fields
+                    ...defaultCourse, // fallback for schema safety
                     ...c,
                     difficulty: capitalize(c.difficulty),
-                    enrolled: !!res.enrollment,
-                    progress: res.enrollment?.progress || 0,
+                    enrolled: !!enrollment,
+                    progress: enrollment?.progress || 0,
                     instructor: c.author || defaultCourse.instructor,
-                    duration: "4 weeks", // fallback
-                    students: "1.2K", // fallback
-                    xp: 1000, // fallback
+                    duration: formatDuration(c.duration),
+                    students: formatStudents(c.enrollmentCount || 0),
+                    xp: c.totalXP || 0,
                 };
 
                 // Update milestone and lesson progress
-                if (res.milestoneProgress && Array.isArray(res.milestoneProgress)) {
-                    const mp = res.milestoneProgress;
+                if (milestoneProgress && Array.isArray(milestoneProgress)) {
                     merged.milestones = merged.milestones.map((m: any) => {
-                        const prog = mp.find(p => p.milestoneId === m._id || p.milestoneId === m.id);
-                        if (prog) {
-                            return { ...m, completed: prog.isCompleted };
-                        }
-                        return m;
+                        const prog = milestoneProgress.find(p => p.milestoneId === (m._id || m.id));
+
+                        // Merge all sub-items for display
+                        const checkItemCompleted = (item: any) => {
+                            if (!enrollment) return false;
+                            const isTest = item.questions || item.codeChallenge || item.type === 'quiz';
+                            if (isTest) return prog?.allTestsPassed || false;
+                            return false; // For now lessons/resources are not individually tracked or always pending
+                        };
+
+                        const allItems = [
+                            ...(m.lessons || []).map((l: any) => ({ ...l, type: l.type || 'video', completed: checkItemCompleted(l) })),
+                            ...(m.resources || []).map((r: any) => ({ ...r, type: r.type || 'doc', completed: checkItemCompleted(r) })),
+                            ...(m.tests || []).map((t: any) => ({ ...t, type: t.type || 'test', completed: checkItemCompleted(t) }))
+                        ].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                        return {
+                            ...m,
+                            completed: prog?.allTestsPassed || false,
+                            allItems
+                        };
                     });
                 }
 
@@ -300,21 +330,22 @@ export default function CourseDetailPage() {
                                                 className="overflow-hidden"
                                             >
                                                 <div className="border-t border-white/[0.04] px-5 pb-4 pt-2 space-y-1">
-                                                    {(milestone.lessons || []).map((lesson: any) => {
-                                                        const ti = typeIcon[lesson.type] || typeIcon.doc;
+                                                    {(milestone.allItems || milestone.lessons || []).map((item: any) => {
+                                                        const ti = typeIcon[item.type] || typeIcon.doc;
                                                         const Icon = ti.icon;
+                                                        const itemId = item._id || item.id;
                                                         return (
                                                             <Link
-                                                                key={lesson.id || lesson._id}
-                                                                href={`/courses/${slug}/lessons/${lesson.id || lesson._id}`}
+                                                                key={itemId}
+                                                                href={`/courses/${slug}/lessons/${itemId}`}
                                                                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors group/lesson font-mono"
                                                             >
                                                                 <Icon className={`w-4 h-4 ${ti.color} shrink-0`} />
-                                                                <span className={`text-sm flex-1 ${lesson.completed ? "text-zinc-500 line-through" : "text-zinc-300 group-hover/lesson:text-white"} transition-colors`}>
-                                                                    {lesson.title}
+                                                                <span className={`text-sm flex-1 ${item.completed ? "text-zinc-500 line-through" : "text-zinc-300 group-hover/lesson:text-white"} transition-colors`}>
+                                                                    {item.title}
                                                                 </span>
-                                                                <span className="text-[10px] text-zinc-600 font-bold">{lesson.duration}</span>
-                                                                {lesson.completed && <CheckCircle2 className="w-3.5 h-3.5 text-neon-green shrink-0" />}
+                                                                <span className="text-[10px] text-zinc-600 font-bold">{item.duration} {item.duration ? 'min' : ''}</span>
+                                                                {item.completed && <CheckCircle2 className="w-3.5 h-3.5 text-neon-green shrink-0" />}
                                                             </Link>
                                                         );
                                                     })}
@@ -369,32 +400,18 @@ export default function CourseDetailPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={async () => {
-                                    if (course.enrolled) {
-                                        const firstUncompleted = course.milestones
-                                            .flatMap((m: any) => m.lessons || [])
-                                            .find((l: any) => !l.completed);
-                                        const targetLesson = firstUncompleted || course.milestones[0]?.lessons?.[0];
-                                        if (targetLesson) {
-                                            window.location.href = `/courses/${slug}/lessons/${targetLesson.id || targetLesson._id}`;
-                                        }
-                                    } else {
-                                        try {
-                                            setLoading(true);
-                                            await coursesApi.enrollInCourse(slug as string);
-                                            // Refresh state
-                                            const res = await coursesApi.getCourseBySlug(slug as string);
-                                            setCourseState((prev: any) => ({ ...prev, enrolled: true, progress: res.enrollment?.progress || 0 }));
-                                            setLoading(false);
-                                        } catch (err) {
-                                            console.error("Enrollment failed:", err);
-                                            setLoading(false);
-                                        }
+                                onClick={() => {
+                                    const firstUncompleted = course.milestones
+                                        .flatMap((m: any) => m.lessons || [])
+                                        .find((l: any) => !l.completed);
+                                    const targetLesson = firstUncompleted || course.milestones[0]?.lessons?.[0];
+                                    if (targetLesson) {
+                                        window.location.href = `/courses/${slug}/lessons/${targetLesson.id || targetLesson._id}`;
                                     }
                                 }}
                                 className="w-full py-3 bg-neon-green text-black text-sm font-black font-mono uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-neon-green/90 hover:shadow-[0_0_30px_rgba(0,255,163,0.2)] transition-all"
                             >
-                                {course.enrolled ? (course.progress > 0 ? "Continue Learning" : "Start Course") : "Enroll Now"}
+                                {course.progress > 0 ? "Continue Learning" : "Start Course"}
                                 <ChevronRight className="w-4 h-4" />
                             </motion.button>
 

@@ -6,7 +6,9 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/providers/auth-context";
 import { coursesApi } from "@/lib/courses";
-import { SolanaPlaygroundEmbed } from "@/components/ui/solana-playground-embed";
+import { MonacoCodeEditor } from "@/components/ui/monaco-code-editor";
+import { executeInSandbox } from "@/lib/code-sandbox";
+import type { TestCase } from "@/lib/code-sandbox";
 import {
     ArrowLeft,
     ArrowRight,
@@ -113,11 +115,26 @@ const sidebarLessons = [
     { id: "l6", title: "Build a Transaction", type: "test", completed: false },
 ];
 
-const typeIcons: Record<string, { icon: typeof Play; color: string }> = {
+const typeIcons: Record<string, { icon: any; color: string }> = {
     video: { icon: Play, color: "text-neon-cyan" },
     doc: { icon: BookOpen, color: "text-neon-purple" },
     test: { icon: Shield, color: "text-amber-400" },
+    quiz: { icon: List, color: "text-amber-400" },
 };
+
+/* ── helper for youtube embed ────────────────────────── */
+function getYoutubeEmbedUrl(url: string) {
+    if (!url) return null;
+    let videoId = "";
+    if (url.includes("youtu.be/")) {
+        videoId = url.split("youtu.be/")[1]?.split("?")[0];
+    } else if (url.includes("youtube.com/watch?v=")) {
+        videoId = url.split("v=")[1]?.split("&")[0];
+    } else if (url.includes("youtube.com/embed/")) {
+        videoId = url.split("embed/")[1]?.split("?")[0];
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1` : null;
+}
 
 /* ── simple markdown-ish renderer ─────────────────────── */
 function renderContent(md: string) {
@@ -256,18 +273,23 @@ export default function LessonPage() {
     const [challengeCompleted, setChallengeCompleted] = useState(false);
     const [showChallenge, setShowChallenge] = useState(false);
 
+    /* Quiz state */
+    const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+    const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({}); // questionIndex -> optionIndex
+
 
     useEffect(() => {
         if (!authLoading) {
             coursesApi.getCourseBySlug(slug as string).then(res => {
-                const c = res.data;
+                const { course: c, milestoneProgress } = res.data;
                 let currentMilestone: any = null;
                 let currentResource: any = null;
                 let allItems: any[] = [];
 
                 c.milestones.forEach((m: any) => {
+                    const sortedLessons = [...(m.lessons || [])].sort((a, b) => a.order - b.order);
                     const sortedResources = [...(m.resources || [])].sort((a, b) => a.order - b.order);
-                    const items = [...sortedResources, ...(m.tests || []).map((t: any) => ({ ...t, isTest: true }))];
+                    const items = [...sortedLessons, ...sortedResources, ...(m.tests || []).map((t: any) => ({ ...t, isTest: true }))];
                     allItems = [...allItems, ...items.map(i => ({ ...i, milestoneId: m._id || m.id, mTitle: m.title, mXp: m.xpReward }))];
                 });
 
@@ -278,14 +300,21 @@ export default function LessonPage() {
                     const next = allItems[currentIndex + 1] || null;
                     currentMilestone = c.milestones.find((m: any) => (m._id || m.id) === currentResource.milestoneId);
 
-                    const mItems = currentMilestone ? [
-                        ...(currentMilestone.resources || []).map((r: any) => ({
-                            id: r._id || r.id, title: r.title, type: r.type === "video" ? "video" : "doc", completed: false
-                        })),
-                        ...(currentMilestone.tests || []).map((t: any) => ({
-                            id: t._id || t.id, title: t.title, type: "test", completed: false
-                        }))
-                    ] : [];
+                    const progress = milestoneProgress?.find((p: any) => p.milestoneId === currentResource.milestoneId);
+
+                    const checkCompleted = (item: any) => {
+                        if (item.isTest) {
+                            const attempt = progress?.testAttempts?.find((a: any) => a.testId === (item._id || item.id));
+                            return attempt?.passed || false;
+                        }
+                        return progress?.allTestsPassed || false;
+                    };
+
+                    const mItems = [
+                        ...(currentMilestone.lessons || []).map((l: any) => ({ ...l, type: l.type || 'video', completed: checkCompleted(l) })),
+                        ...(currentMilestone.resources || []).map((r: any) => ({ ...r, type: r.type || 'doc', completed: checkCompleted(r) })),
+                        ...(currentMilestone.tests || []).map((t: any) => ({ ...t, type: t.type || 'test', completed: checkCompleted(t) }))
+                    ].sort((a, b) => (a.order || 0) - (b.order || 0));
                     setSidebarLessons(mItems);
 
                     const mappedLesson = {
@@ -300,13 +329,23 @@ export default function LessonPage() {
                             description: currentResource.codeChallenge.prompt,
                             starterCode: currentResource.codeChallenge.starterCode || "",
                             testCases: currentResource.codeChallenge.testCases.map((tc: any, idx: number) => ({
-                                id: `t${idx}`, name: tc.description, passed: null
+                                id: `t${idx}`, name: tc.description, passed: null as boolean | null,
+                                input: tc.input || undefined,
+                                expectedOutput: tc.expectedOutput || undefined,
                             })),
                             xp: currentMilestone.xpReward || 50
-                        } : null,
+                        } : (currentResource.type === "quiz" ? {
+                            title: "Milestone Quiz",
+                            description: "Test your knowledge on the concepts covered in this module.",
+                            questions: currentResource.questions || [],
+                            xp: currentMilestone.xpReward || 50
+                        } : null),
+                        testType: currentResource.type, // 'quiz' or 'code_challenge'
                         course: { title: c.title },
-                        milestone: { title: currentMilestone?.title },
+                        milestone: { title: currentMilestone?.title, description: currentMilestone?.description },
                         xpReward: currentMilestone?.xpReward || 0,
+                        videoUrl: currentResource.url || null,
+                        completed: checkCompleted(currentResource)
                     };
 
                     setLesson(mappedLesson);
@@ -315,9 +354,15 @@ export default function LessonPage() {
                     setNextLesson(next ? { id: next._id || next.id, title: next.title } : null);
 
                     if (mappedLesson.hasChallenge && mappedLesson.challenge) {
-                        setCode(mappedLesson.challenge.starterCode);
-                        setTestResults(mappedLesson.challenge.testCases);
+                        if (mappedLesson.testType === "code_challenge") {
+                            setCode(mappedLesson.challenge.starterCode);
+                            setTestResults(mappedLesson.challenge.testCases);
+                        } else if (mappedLesson.testType === "quiz") {
+                            setQuizQuestions(mappedLesson.challenge.questions);
+                            setSelectedAnswers({});
+                        }
                     }
+
                 } else {
                     setLesson(lessonData); // fallback to stub
                 }
@@ -344,43 +389,108 @@ export default function LessonPage() {
     }, []);
     const handleMouseUp = useCallback(() => { dragging.current = false; }, []);
 
-    /* Mark challenge complete */
+
+
+    /* State for showing quiz feedback/explanations */
+    const [showFeedback, setShowFeedback] = useState(false);
+
+    /* Run code in sandbox or validate quiz and award XP */
     const runTests = useCallback(async () => {
         setIsRunning(true);
         setOutput(null);
+        setShowFeedback(false);
 
-        if (lesson?.challenge) {
-            const resetResults = lesson.challenge.testCases.map((tc: any) => ({ ...tc, passed: null }));
+        if (lesson?.testType === "code_challenge") {
+            const cases: TestCase[] = lesson.challenge.testCases;
+            const resetResults = cases.map((tc: TestCase) => ({ ...tc, passed: null }));
             setTestResults(resetResults);
 
-            // Simulate sequential validation
-            const results: any[] = [];
-            for (let i = 0; i < lesson.challenge.testCases.length; i++) {
-                await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
-                const tc = lesson.challenge.testCases[i];
-                results.push({ ...tc, passed: true });
-                setTestResults([...results, ...lesson.challenge.testCases.slice(i + 1).map((t: any) => ({ ...t, passed: null }))]);
+            await new Promise(r => setTimeout(r, 300));
+            const result = await executeInSandbox(code, cases);
+
+            const animatedResults: TestCase[] = [];
+            for (let i = 0; i < cases.length; i++) {
+                await new Promise(r => setTimeout(r, 400));
+                const sandboxResult = result.testResults.find(r => r.id === cases[i].id);
+                animatedResults.push({
+                    ...cases[i],
+                    passed: sandboxResult ? sandboxResult.passed : false,
+                });
+                setTestResults([
+                    ...animatedResults,
+                    ...cases.slice(i + 1).map((t: TestCase) => ({ ...t, passed: null })),
+                ]);
             }
 
-            setOutput(`✓ All ${results.length} test cases passed!`);
-            setChallengeCompleted(true);
-            try {
-                await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
-                await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
-            } catch (e) {
-                console.error("Failed to complete milestone/claim xp", e);
-            }
-        } else {
-            await new Promise(r => setTimeout(r, 1500));
-            try {
-                await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
-                await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
+            const passedCount = animatedResults.filter(r => r.passed).length;
+            const allPassed = passedCount === cases.length;
+
+            if (allPassed) {
+                setOutput(`✓ All ${passedCount} test cases passed!`);
                 setChallengeCompleted(true);
-                setOutput("✓ Quiz completed successfully!");
-            } catch (e) { console.error("Error", e); }
+                try {
+                    await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
+                    await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
+                } catch (e) {
+                    console.error("Failed to complete milestone/claim xp", e);
+                }
+            } else {
+                const failedTests = animatedResults.filter(r => !r.passed);
+                const errorDetails = result.testResults
+                    .filter(r => !r.passed && r.error)
+                    .map(r => r.error)
+                    .join('; ');
+                const errorMsg = result.error
+                    ? `✗ Error: ${result.error}`
+                    : `✗ ${failedTests.length} of ${cases.length} test(s) failed${errorDetails ? ': ' + errorDetails : ''}`;
+                setOutput(errorMsg);
+            }
+
+            if (result.output.length > 0) {
+                const consoleLog = result.output.join('\n');
+                setOutput(prev => (prev ? prev + '\n' : '') + '\n> ' + consoleLog);
+            }
+        } else if (lesson?.testType === "quiz") {
+            // Validate Quiz
+            const questions = lesson.challenge.questions;
+            const totalQuestions = questions.length;
+
+            // Check if all answered
+            if (Object.keys(selectedAnswers).length < totalQuestions) {
+                setOutput(`✗ Please answer all ${totalQuestions} questions before submitting.`);
+                setIsRunning(false);
+                return;
+            }
+
+            await new Promise(r => setTimeout(r, 800));
+
+            let correctCount = 0;
+            const results = questions.map((q: any, idx: number) => {
+                const selectedIdx = selectedAnswers[idx];
+                const isCorrect = q.options[selectedIdx]?.isCorrect === true;
+                if (isCorrect) correctCount++;
+                return { id: `q${idx}`, name: q.question, passed: isCorrect };
+            });
+
+            setTestResults(results);
+            setShowFeedback(true);
+
+            if (correctCount === totalQuestions) {
+                setOutput(`✓ Amazing! You got all ${totalQuestions} questions correct.`);
+                setChallengeCompleted(true);
+                try {
+                    await coursesApi.completeMilestone(slug as string, milestone._id || milestone.id, lesson.id, 100);
+                    await coursesApi.claimMilestoneXP(slug as string, milestone._id || milestone.id);
+                } catch (e) {
+                    console.error("Failed to complete quiz", e);
+                }
+            } else {
+                setOutput(`✗ You got ${correctCount} of ${totalQuestions} questions correct. Review the questions and try again.`);
+            }
         }
+
         setIsRunning(false);
-    }, [lesson, slug, milestone]);
+    }, [lesson, slug, milestone, code, selectedAnswers]);
 
     const resetCode = () => {
         setCode(lesson.challenge.starterCode);
@@ -443,6 +553,73 @@ export default function LessonPage() {
                     }} />
 
                     <div className="max-w-3xl mx-auto px-10 py-10 relative z-10">
+                        {/* Milestone Header */}
+                        <div className="mb-12 border-b border-white/[0.08] pb-10">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-[10px] font-black font-mono uppercase tracking-[0.3em] text-neon-green/60">Milestone_Overview</span>
+                                <div className="flex-1 h-px bg-white/[0.06]" />
+                            </div>
+                            <h2 className="text-xl font-mono font-black text-white mb-3">
+                                <span className="text-neon-green/40">// </span>{lesson.milestone.title}
+                            </h2>
+                            <p className="text-xs text-zinc-500 font-mono leading-relaxed">
+                                {lesson.milestone.description || "No description available for this milestone."}
+                            </p>
+                        </div>
+
+                        {/* Video Player */}
+                        {lesson.type === "video" && lesson.videoUrl && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mb-12 relative group"
+                            >
+                                {/* Video Frame Glow */}
+                                <div className="absolute -inset-1 bg-gradient-to-r from-neon-green/10 via-neon-cyan/10 to-neon-purple/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                <div className="relative border border-white/[0.08] bg-[#050810] overflow-hidden">
+                                    {/* Player Top Bar */}
+                                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-white/[0.02] font-mono">
+                                        <div className="flex items-center gap-2">
+                                            <Play className="w-3.5 h-3.5 text-neon-green animate-pulse" />
+                                            <span className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">protocol_playback_active</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-neon-green rounded-full animate-pulse" />
+                                            <span className="text-[9px] text-neon-green font-bold uppercase tracking-widest">Live</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Video Container */}
+                                    <div className="aspect-video bg-black relative">
+                                        {getYoutubeEmbedUrl(lesson.videoUrl) ? (
+                                            <iframe
+                                                src={getYoutubeEmbedUrl(lesson.videoUrl)!}
+                                                className="w-full h-full"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600 font-mono italic p-10 text-center">
+                                                <X className="w-8 h-8 mb-4 opacity-20" />
+                                                <p className="text-xs">Decoding Error: Invalid Playback Stream</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Player decorative corners */}
+                                    <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-green/40 pointer-events-none" />
+                                    <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-green/40 pointer-events-none" />
+                                </div>
+
+                                {/* Subtitle/Metadata */}
+                                <div className="mt-3 flex items-center justify-between px-1 font-mono">
+                                    <span className="text-[9px] text-zinc-600 uppercase tracking-[0.2em]">Source: {lesson.videoUrl.includes('youtube') ? 'Youtube_Mainnet' : 'External_Link'}</span>
+                                    <span className="text-[9px] text-zinc-700 uppercase tracking-widest leading-none">Format: 4096p_CRYPTED</span>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {renderContent(lesson.content)}
 
                         {/* Challenge toggle */}
@@ -535,7 +712,9 @@ export default function LessonPage() {
                                 <div className="flex items-center gap-3">
                                     <Terminal className="w-4 h-4 text-neon-green" />
                                     <span className="text-xs font-black text-white uppercase tracking-wider">{lesson.challenge.title}</span>
-                                    <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border bg-neon-cyan/[0.05] border-neon-cyan/20 text-neon-cyan">Solana Playground</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border bg-white/[0.02] border-white/10 text-zinc-500">
+                                        {lesson.testType === "code_challenge" ? "Monaco Editor" : "Evaluation Protocol"}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => setShowChallenge(false)} className="p-1.5 border border-white/5 hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
@@ -552,12 +731,66 @@ export default function LessonPage() {
                                 </div>
                             </div>
 
-                            {/* Solana Playground */}
-                            <div className="flex-1 overflow-hidden relative z-10">
-                                <SolanaPlaygroundEmbed
-                                    initialCode={code}
-                                    lessonId={lesson.id}
-                                />
+                            {/* Content: Monaco or Quiz */}
+                            <div className="flex-1 overflow-y-auto relative z-10 custom-scrollbar">
+                                {lesson.testType === "code_challenge" ? (
+                                    <div className="h-full">
+                                        <MonacoCodeEditor
+                                            code={code}
+                                            language={lesson.language || "typescript"}
+                                            onChange={(value) => setCode(value)}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="p-6 space-y-8 font-mono">
+                                        {quizQuestions.map((q, qIdx) => (
+                                            <div key={qIdx} className="space-y-4">
+                                                <div className="flex gap-3">
+                                                    <span className="text-neon-green/40 font-black">0{(qIdx + 1)}.</span>
+                                                    <h3 className="text-sm font-bold text-white leading-relaxed">{q.question}</h3>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-2 ml-7">
+                                                    {q.options.map((opt: any, oIdx: number) => {
+                                                        const isSelected = selectedAnswers[qIdx] === oIdx;
+                                                        const isCorrect = opt.isCorrect;
+                                                        const showExp = showFeedback && (isSelected || isCorrect);
+
+                                                        return (
+                                                            <div key={oIdx} className="space-y-2">
+                                                                <button
+                                                                    disabled={showFeedback && challengeCompleted}
+                                                                    onClick={() => setSelectedAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
+                                                                    className={`w-full p-3 text-left border transition-all relative group ${isSelected
+                                                                        ? (showFeedback ? (isCorrect ? "bg-neon-green/10 border-neon-green/40 text-neon-green" : "bg-red-500/10 border-red-500/40 text-red-400") : "bg-neon-green/10 border-neon-green/40 text-neon-green shadow-[0_0_15px_rgba(0,255,163,0.05)]")
+                                                                        : (showFeedback && isCorrect ? "bg-neon-green/5 border-neon-green/20 text-neon-green/60" : "bg-white/[0.02] border-white/5 text-zinc-400 hover:border-white/20 hover:text-zinc-300")
+                                                                        }`}
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-3">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 ${isSelected ? (showFeedback ? (isCorrect ? "border-neon-green" : "border-red-500") : "border-neon-green") : "border-zinc-700"
+                                                                                }`}>
+                                                                                {isSelected && <div className={`w-1.5 h-1.5 ${showFeedback ? (isCorrect ? "bg-neon-green" : "bg-red-500") : "bg-neon-green"}`} />}
+                                                                            </div>
+                                                                            <span className="text-[11px] uppercase tracking-wider">{opt.label}</span>
+                                                                        </div>
+                                                                        {showFeedback && isSelected && (
+                                                                            isCorrect ? <CheckCircle2 className="w-3.5 h-3.5 text-neon-green" /> : <X className="w-3.5 h-3.5 text-red-500" />
+                                                                        )}
+                                                                    </div>
+                                                                </button>
+                                                                {showExp && q.explanation && (
+                                                                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className={`ml-6 p-2 text-[10px] font-mono leading-relaxed border-l-2 ${isCorrect ? "border-neon-green/30 text-zinc-500" : "border-red-500/30 text-red-400/60"}`}>
+                                                                        <span className="font-black opacity-50 uppercase mr-1">Note //</span> {q.explanation}
+                                                                    </motion.div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Test cases — animated */}
@@ -636,6 +869,7 @@ export default function LessonPage() {
                                         <p className={`text-xs font-mono font-bold ${challengeCompleted ? "text-neon-green" : "text-red-400"}`}>
                                             {output}
                                         </p>
+
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -656,18 +890,18 @@ export default function LessonPage() {
                                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                             className="flex items-center gap-2 px-3 py-1.5 bg-neon-green/10 border border-neon-green/30 text-neon-green text-[10px] font-black uppercase tracking-wider shadow-[0_0_20px_rgba(0,255,163,0.1)]"
                                         >
-                                            <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Challenge Complete
+                                            <Sparkles className="w-3.5 h-3.5 animate-pulse" /> {lesson.testType === "quiz" ? "Evaluation Passed" : "Challenge Complete"}
                                         </motion.div>
                                     )}
                                     <motion.button
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={runTests}
-                                        disabled={isRunning}
+                                        disabled={isRunning || (challengeCompleted && lesson.testType === "quiz")}
                                         className="flex items-center gap-2 px-5 py-2.5 bg-neon-green text-black text-xs font-black uppercase tracking-[0.1em] hover:bg-neon-green/90 transition-all shadow-[0_0_20px_rgba(0,255,163,0.1)] group disabled:opacity-50"
                                     >
-                                        {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                                        {isRunning ? "Verifying…" : "Run Protocol"}
+                                        {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (lesson.testType === "quiz" ? <Shield className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />)}
+                                        {isRunning ? "Verifying…" : (lesson.testType === "quiz" ? "Submit Evaluation" : "Run Protocol")}
                                     </motion.button>
                                 </div>
                             </div>
@@ -748,10 +982,10 @@ export default function LessonPage() {
                         </>
                     )}
                 </AnimatePresence>
-            </div>
+            </div >
 
             {/* Bottom bar */}
-            <div className="shrink-0 border-t border-white/[0.08] bg-[#020408] px-6 py-3 flex items-center justify-between font-mono relative z-10">
+            < div className="shrink-0 border-t border-white/[0.08] bg-[#020408] px-6 py-3 flex items-center justify-between font-mono relative z-10" >
                 <div className="flex items-center gap-4">
                     {prevLesson ? (
                         <Link href={`/courses/${slug}/lessons/${prevLesson.id}`} className="flex items-center gap-2 group text-xs text-zinc-500 hover:text-neon-green transition-colors">
@@ -793,7 +1027,7 @@ export default function LessonPage() {
                         <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-black">Quest Complete</div>
                     )}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

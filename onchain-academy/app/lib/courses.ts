@@ -40,13 +40,15 @@ export interface Course {
     milestones: Milestone[];
     author: CourseAuthor;
     createdAt: string;
+    totalXP: number;
+    enrollmentCount: number;
 
     // Front-end calculated or injected fields
     level?: string;
     xp?: number;
     modules?: number;
     courseLessons?: number; // mapped to avoid conflict
-    duration?: string;
+    duration?: string | number; // allow number for minutes from API
 
     boss?: string;
     bossEmoji?: string;
@@ -78,9 +80,11 @@ export interface PaginatedCourses {
 
 export interface SingleCourseResponse {
     success: boolean;
-    data: Course;
-    enrollment?: any;
-    milestoneProgress?: any;
+    data: {
+        course: Course;
+        enrollment?: any;
+        milestoneProgress?: any[];
+    };
 }
 
 // ─── API Wrapper ───
@@ -109,12 +113,7 @@ export const coursesApi = {
         return fetchWithAuth<SingleCourseResponse>(`/courses/${slug}`, { method: "GET" });
     },
 
-    /**
-     * Enroll in a course
-     */
-    async enrollInCourse(slug: string): Promise<any> {
-        return fetchWithAuth(`/courses/${slug}/enroll`, { method: "POST" });
-    },
+
 
     /**
      * Complete a test attempt for a milestone
