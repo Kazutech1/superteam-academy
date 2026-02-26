@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     ArrowLeft,
     Crown,
@@ -11,33 +11,53 @@ import {
     Zap,
     Trophy
 } from "lucide-react";
+import { leaderboardApi, LeaderboardUser } from "@/lib/leaderboard";
 
-/* ── stub data ──────────────────────────────────────── */
-const leaderboardUsers = [
-    { rank: 1, name: "Maya Chen", username: "maya_sol", xp: 24850, level: 15, streak: 45, avatar: "🥇", change: "+2", title: "Grandmaster" },
-    { rank: 2, name: "Carlos Mendez", username: "carlos_dev", xp: 22100, level: 14, streak: 32, avatar: "🥈", change: "+1", title: "Champion" },
-    { rank: 3, name: "Aisha Patel", username: "aisha_crypto", xp: 19800, level: 14, streak: 28, avatar: "🥉", change: "-1", title: "Champion" },
-    { rank: 4, name: "James Wilson", username: "jwilson", xp: 17500, level: 13, streak: 21, avatar: "4", change: "+3", title: "Veteran" },
-    { rank: 5, name: "Yuki Tanaka", username: "yuki_anchor", xp: 15200, level: 12, streak: 15, avatar: "5", change: "0", title: "Warrior" },
-    { rank: 6, name: "Elena Volkov", username: "elena_v", xp: 12800, level: 11, streak: 14, avatar: "6", change: "+1", title: "Warrior" },
-    { rank: 7, name: "David Kim", username: "d_kim", xp: 10200, level: 10, streak: 12, avatar: "7", change: "-2", title: "Fighter" },
-    { rank: 8, name: "You", username: "you_sol", xp: 7340, level: 7, streak: 12, avatar: "8", change: "+5", title: "Initiate", isCurrentUser: true },
-    { rank: 9, name: "Sophie Martin", username: "sophie_m", xp: 6200, level: 6, streak: 8, avatar: "9", change: "0", title: "Initiate" },
-    { rank: 10, name: "Omar Hassan", username: "omar_h", xp: 5800, level: 6, streak: 7, avatar: "10", change: "-1", title: "Initiate" },
-    { rank: 11, name: "Lisa Park", username: "lisa_p", xp: 4500, level: 5, streak: 5, avatar: "11", change: "+2", title: "Novice" },
-    { rank: 12, name: "Raj Kumar", username: "raj_k", xp: 3100, level: 4, streak: 2, avatar: "12", change: "0", title: "Novice" },
-];
-
-const tabs = ["All-Time", "Season", "Weekly"] as const;
+const tabs = [
+    { id: "all", label: "All-Time" },
+    { id: "month", label: "Season" },
+    { id: "week", label: "Weekly" }
+] as const;
 
 export default function LeaderboardPage() {
-    const [activeTab, setActiveTab] = useState<typeof tabs[number]>("All-Time");
+    const [activeTab, setActiveTab] = useState<typeof tabs[number]["id"]>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [rankings, setRankings] = useState<LeaderboardUser[]>([]);
+    const [currentUser, setCurrentUser] = useState<LeaderboardUser | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const filtered = leaderboardUsers.filter((u) =>
-        u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.username.toLowerCase().includes(searchQuery.toLowerCase())
+    useEffect(() => {
+        setLoading(true);
+        leaderboardApi.getLeaderboard({ period: activeTab })
+            .then(res => {
+                setRankings(res.data.rankings);
+                setCurrentUser(res.data.currentUser);
+            })
+            .catch(err => console.error("Failed to fetch leaderboard:", err))
+            .finally(() => setLoading(false));
+    }, [activeTab]);
+
+    const filtered = rankings.filter((u) =>
+        (u.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (u.username?.toLowerCase() || "").includes(searchQuery.toLowerCase())
     );
+
+    const getRankIcon = (rank: number) => {
+        if (rank === 1) return "🥇";
+        if (rank === 2) return "🥈";
+        if (rank === 3) return "🥉";
+        return null;
+    };
+
+    const getRankTitle = (totalXP: number) => {
+        if (totalXP >= 20000) return "Grandmaster";
+        if (totalXP >= 15000) return "Champion";
+        if (totalXP >= 10000) return "Veteran";
+        if (totalXP >= 5000) return "Warrior";
+        if (totalXP >= 2000) return "Fighter";
+        if (totalXP >= 500) return "Initiate";
+        return "Novice";
+    };
 
     return (
         <div className="min-h-screen bg-[#050810] relative overflow-hidden flex flex-col font-sans">
@@ -114,90 +134,94 @@ export default function LeaderboardPage() {
                             <span className="text-sm font-bold text-white uppercase tracking-wider">Global Rankings</span>
                         </div>
                         <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0">
-                            {tabs.map((tab, i) => (
-                                <button key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`px-3 py-1.5 text-[10px] font-bold font-mono uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === tab ? "bg-amber-400/10 text-amber-400 border border-amber-400/20" : "text-zinc-500 hover:text-zinc-300 border border-transparent"}`}
+                            {tabs.map((tab) => (
+                                <button key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-3 py-1.5 text-[10px] font-bold font-mono uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === tab.id ? "bg-amber-400/10 text-amber-400 border border-amber-400/20" : "text-zinc-500 hover:text-zinc-300 border border-transparent"}`}
                                 >
-                                    {tab}
+                                    {tab.label}
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     <div className="divide-y divide-white/[0.03]">
-                        {filtered.length === 0 ? (
+                        {loading ? (
+                            <div className="p-10 text-center font-mono text-zinc-500 text-sm">
+                                <span className="animate-pulse">Loading rankings...</span>
+                            </div>
+                        ) : filtered.length === 0 ? (
                             <div className="p-10 text-center font-mono text-zinc-500 text-sm">
                                 No builders found matching "{searchQuery}"
                             </div>
                         ) : (
-                            filtered.map((player, i) => (
-                                <motion.div
-                                    key={player.username}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.04 }}
-                                    className={`flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors group relative ${player.rank === 1 ? "bg-amber-400/[0.03]" : ""} ${player.isCurrentUser ? "border-l-2 border-l-neon-green bg-neon-green/[0.02]" : "border-l-2 border-l-transparent"}`}
-                                >
-                                    {player.rank === 1 && (
-                                        <motion.div
-                                            animate={{ opacity: [0, 0.08, 0] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                            className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 pointer-events-none"
-                                        />
-                                    )}
+                            filtered.map((player, i) => {
+                                const rankIcon = getRankIcon(player.rank);
+                                const title = getRankTitle(player.totalXP);
+                                const isMe = currentUser?.username === player.username;
 
-                                    <div className="w-8 md:w-12 text-center relative z-10 font-mono">
-                                        {player.rank <= 3 ? (
-                                            <span className="text-xl md:text-2xl font-black text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">{player.avatar}</span>
-                                        ) : (
-                                            <span className={`text-sm md:text-base font-bold ${player.isCurrentUser ? "text-neon-green" : "text-zinc-600"}`}>#{player.rank}</span>
+                                return (
+                                    <motion.div
+                                        key={player.userId}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: i * 0.04 }}
+                                        className={`flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors group relative ${player.rank === 1 ? "bg-amber-400/[0.03]" : ""} ${isMe ? "border-l-2 border-l-neon-green bg-neon-green/[0.02]" : "border-l-2 border-l-transparent"}`}
+                                    >
+                                        {player.rank === 1 && (
+                                            <motion.div
+                                                animate={{ opacity: [0, 0.08, 0] }}
+                                                transition={{ duration: 2, repeat: Infinity }}
+                                                className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 to-amber-400/0 pointer-events-none"
+                                            />
                                         )}
-                                    </div>
 
-                                    <div className="flex-1 min-w-0 relative z-10 pl-2">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-sm font-bold font-mono truncate transition-colors ${player.isCurrentUser ? "text-neon-green" : "text-white group-hover:text-amber-400"}`}>
-                                                {player.name}
-                                            </span>
-                                            {player.isCurrentUser && (
-                                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-neon-green/10 text-neon-green border border-neon-green/20 uppercase tracking-wider hidden sm:inline-block">You</span>
+                                        <div className="w-8 md:w-12 text-center relative z-10 font-mono">
+                                            {rankIcon ? (
+                                                <span className="text-xl md:text-2xl font-black text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">{rankIcon}</span>
+                                            ) : (
+                                                <span className={`text-sm md:text-base font-bold ${isMe ? "text-neon-green" : "text-zinc-600"}`}>#{player.rank}</span>
                                             )}
-                                            <span className={`text-[8px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 hidden sm:inline-block ${player.title === "Grandmaster" ? "bg-amber-400/10 text-amber-400 border border-amber-400/20" :
-                                                    player.title === "Champion" ? "bg-neon-purple/10 text-neon-purple border border-neon-purple/20" :
-                                                        player.title === "Veteran" ? "bg-blue-400/10 text-blue-400 border border-blue-400/20" :
-                                                            "bg-white/5 text-zinc-500 border border-white/[0.06]"
-                                                }`}>{player.title}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono">
-                                            <span className="hidden sm:inline-block">@{player.username}</span>
-                                            <span className="hidden sm:inline-block text-zinc-700">•</span>
-                                            <span className="flex items-center gap-0.5 font-bold">Lvl {player.level}</span>
-                                            <span className="flex items-center gap-0.5 text-orange-400/80 font-bold"><Flame className="w-3 h-3" />{player.streak}d</span>
-                                        </div>
-                                    </div>
 
-                                    <div className="text-right relative z-10 font-mono flex items-center gap-4">
-                                        <div className="hidden sm:block text-center min-w-[50px]">
-                                            <div className={`text-[10px] font-bold ${player.change.startsWith("+") ? "text-neon-green" : player.change === "0" ? "text-zinc-600" : "text-red-400"}`}>
-                                                {player.change !== "0" ? `${player.change} ↕` : "—"}
+                                        <div className="flex-1 min-w-0 relative z-10 pl-2">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-sm font-bold font-mono truncate transition-colors ${isMe ? "text-neon-green" : "text-white group-hover:text-amber-400"}`}>
+                                                    {player.name || player.username}
+                                                </span>
+                                                {isMe && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-neon-green/10 text-neon-green border border-neon-green/20 uppercase tracking-wider hidden sm:inline-block">You</span>
+                                                )}
+                                                <span className={`text-[8px] font-black font-mono uppercase tracking-wider px-1.5 py-0.5 hidden sm:inline-block ${title === "Grandmaster" ? "bg-amber-400/10 text-amber-400 border border-amber-400/20" :
+                                                    title === "Champion" ? "bg-neon-purple/10 text-neon-purple border border-neon-purple/20" :
+                                                        title === "Veteran" ? "bg-blue-400/10 text-blue-400 border border-blue-400/20" :
+                                                            "bg-white/5 text-zinc-500 border border-white/[0.06]"
+                                                    }`}>{title}</span>
                                             </div>
-                                            <div className="text-[8px] text-zinc-600 uppercase tracking-widest mt-0.5">Change</div>
-                                        </div>
-                                        <div className="min-w-[80px]">
-                                            <div className="text-sm md:text-base font-black text-amber-400 flex items-center justify-end gap-1">
-                                                {player.xp.toLocaleString()} <Zap className="w-3 h-3 md:hidden hidden sm:block" />
+                                            <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono">
+                                                <span className="hidden sm:inline-block">@{player.username}</span>
+                                                <span className="hidden sm:inline-block text-zinc-700">•</span>
+                                                <span className="flex items-center gap-0.5 font-bold">Lvl {player.level}</span>
+                                                <span className="flex items-center gap-0.5 text-orange-400/80 font-bold"><Flame className="w-3 h-3" />{player.currentStreak}d</span>
                                             </div>
-                                            <div className="text-[8px] text-zinc-500 uppercase tracking-widest mt-0.5">Total XP</div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))
+
+                                        <div className="text-right relative z-10 font-mono flex items-center gap-4">
+                                            <div className="min-w-[80px]">
+                                                <div className="text-sm md:text-base font-black text-amber-400 flex items-center justify-end gap-1">
+                                                    {player.totalXP.toLocaleString()} <Zap className="w-3 h-3 hidden sm:block" />
+                                                </div>
+                                                <div className="text-[8px] text-zinc-500 uppercase tracking-widest mt-0.5">Total XP</div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })
                         )}
                     </div>
 
                     {/* Footer / User Sticky Status */}
-                    {filtered.length > 0 && !filtered.some(u => u.isCurrentUser) && !searchQuery && (
+                    {currentUser && !filtered.some(u => u.username === currentUser.username) && (
                         <div className="px-5 py-4 border-t border-white/5 bg-neon-green/[0.02] flex flex-col sm:flex-row sm:items-center justify-between relative overflow-hidden font-mono border-l-2 border-l-neon-green">
                             <motion.div
                                 animate={{ x: [-300, 600] }}
@@ -206,21 +230,21 @@ export default function LeaderboardPage() {
                             />
                             <div className="flex items-center gap-3 relative z-10">
                                 <div className="w-8 text-center text-sm font-bold text-zinc-500">
-                                    #42
+                                    #{currentUser.rank}
                                 </div>
                                 <div>
                                     <div className="text-sm font-bold text-neon-green mb-0.5">You</div>
                                     <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-bold">
-                                        <span>Lvl 7</span>
-                                        <span className="flex items-center gap-0.5 text-orange-400/80"><Flame className="w-3 h-3" />12d</span>
+                                        <span>Lvl {currentUser.level}</span>
+                                        <span className="flex items-center gap-0.5 text-orange-400/80"><Flame className="w-3 h-3" />{currentUser.currentStreak}d</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right relative z-10 mt-2 sm:mt-0">
                                 <div className="text-sm font-black text-amber-400 flex items-center justify-end gap-1">
-                                    7,340 <Zap className="w-3 h-3 hidden sm:block" />
+                                    {currentUser.totalXP.toLocaleString()} <Zap className="w-3 h-3 hidden sm:block" />
                                 </div>
-                                <div className="text-[8px] text-neon-green uppercase tracking-widest mt-0.5 font-bold">+150 XP Today</div>
+                                <div className="text-[8px] text-neon-green uppercase tracking-widest mt-0.5 font-bold">Your Rank</div>
                             </div>
                         </div>
                     )}
