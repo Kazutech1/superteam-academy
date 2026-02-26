@@ -113,6 +113,13 @@ export const coursesApi = {
         return fetchWithAuth<SingleCourseResponse>(`/courses/${slug}`, { method: "GET" });
     },
 
+    /**
+     * Enroll in a course
+     */
+    async enrollCourse(slug: string): Promise<any> {
+        return fetchWithAuth(`/courses/${slug}/enroll`, { method: "POST" });
+    },
+
 
 
     /**

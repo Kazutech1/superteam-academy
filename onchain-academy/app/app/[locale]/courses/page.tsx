@@ -21,19 +21,8 @@ export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
 
-    const handleBeginQuest = async (slug: string) => {
-        try {
-            setLoadingCourses(true);
-            // Get course details with the course slug route
-            await coursesApi.getCourseBySlug(slug);
-            router.push(`/courses/${slug}`);
-        } catch (err) {
-            console.error("Failed to fetch course details:", err);
-            // Navigate anyway to let course page handle it
-            router.push(`/courses/${slug}`);
-        } finally {
-            setLoadingCourses(false);
-        }
+    const handleBeginQuest = (slug: string) => {
+        router.push(`/courses/${slug}`);
     };
 
     useEffect(() => {

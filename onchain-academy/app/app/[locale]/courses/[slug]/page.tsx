@@ -400,13 +400,21 @@ export default function CourseDetailPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                    const firstUncompleted = course.milestones
-                                        .flatMap((m: any) => m.lessons || [])
-                                        .find((l: any) => !l.completed);
-                                    const targetLesson = firstUncompleted || course.milestones[0]?.lessons?.[0];
-                                    if (targetLesson) {
-                                        window.location.href = `/courses/${slug}/lessons/${targetLesson.id || targetLesson._id}`;
+                                onClick={async () => {
+                                    try {
+                                        if (!course.enrolled) {
+                                            await coursesApi.enrollCourse(slug as string);
+                                        }
+
+                                        const firstUncompleted = course.milestones
+                                            .flatMap((m: any) => m.lessons || [])
+                                            .find((l: any) => !l.completed);
+                                        const targetLesson = firstUncompleted || course.milestones[0]?.lessons?.[0];
+                                        if (targetLesson) {
+                                            window.location.href = `/courses/${slug}/lessons/${targetLesson.id || targetLesson._id}`;
+                                        }
+                                    } catch (err) {
+                                        console.error("Failed to enrollment/navigate:", err);
                                     }
                                 }}
                                 className="w-full py-3 bg-neon-green text-black text-sm font-black font-mono uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-neon-green/90 hover:shadow-[0_0_30px_rgba(0,255,163,0.2)] transition-all"
