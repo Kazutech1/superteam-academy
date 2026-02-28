@@ -176,7 +176,17 @@ export function ProgressRing({ percent, color, size = 52 }: { percent: number; c
 }
 
 /* ─── Quest Card ─── */
-export function QuestCard({ path, index, href }: { path: typeof paths[number]; index: number; href?: string }) {
+export function QuestCard({
+    path,
+    index,
+    href,
+    onBeginQuest
+}: {
+    path: any;
+    index: number;
+    href?: string;
+    onBeginQuest?: (slug: string) => void
+}) {
     const isLocked = 'locked' in path && path.locked;
     const linkHref = href || (isLocked ? "#" : `/courses/${path.slug}`);
 
@@ -209,12 +219,17 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                     <div className="flex items-start justify-between gap-4">
                         {/* Left: Quest info */}
                         <div className="flex items-start gap-4 flex-1 min-w-0">
-                            {/* Quest Icon */}
                             <motion.div
                                 whileHover={!isLocked ? { rotate: [0, -10, 10, -5, 0], scale: 1.1 } : {}}
-                                className={`w-16 h-16 border ${isLocked ? "border-white/10" : path.borderColor} bg-white/[0.02] flex-shrink-0 relative flex items-center justify-center text-2xl`}
+                                className={`w-16 h-16 border ${isLocked ? "border-white/10" : path.borderColor} bg-white/[0.02] flex-shrink-0 relative flex items-center justify-center text-2xl overflow-hidden`}
                             >
-                                {isLocked ? <Lock className="w-6 h-6 text-zinc-600" /> : path.questIcon}
+                                {isLocked ? (
+                                    <Lock className="w-6 h-6 text-zinc-600" />
+                                ) : (path as any).thumbnail ? (
+                                    <img src={(path as any).thumbnail} alt={path.title} className="w-full h-full object-cover" />
+                                ) : (
+                                    path.questIcon
+                                )}
                                 {!isLocked && (
                                     <motion.div
                                         animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }}
@@ -270,26 +285,36 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
 
                 {/* === Stats Bar === */}
                 <div className="px-6 pb-4">
-                    <div className="flex items-center gap-4 text-[11px] font-mono flex-wrap">
-                        <span className="text-zinc-500 flex items-center gap-1.5">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.modules || 0}</span> Modules
-                        </span>
-                        <span className="text-zinc-600">•</span>
-                        <span className="text-zinc-500 flex items-center gap-1.5">
-                            <Target className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.lessons || 0}</span> Lessons
-                        </span>
-                        <span className="text-zinc-600">•</span>
-                        <span className="text-zinc-500 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{path.duration || "N/A"}</span>
-                        </span>
-                        <span className="text-zinc-600">•</span>
-                        <span className="text-zinc-500 flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5" />
-                            <span className="font-bold text-zinc-300">{(path.playersActive || 0).toLocaleString()}</span> Active
-                        </span>
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-4 text-[11px] font-mono">
+                            <span className="text-zinc-500 flex items-center gap-1.5">
+                                <BookOpen className="w-3.5 h-3.5" />
+                                <span className="font-bold text-zinc-300">{path.modules || 0}</span> Modules
+                            </span>
+                            <span className="text-zinc-600">•</span>
+                            <span className="text-zinc-500 flex items-center gap-1.5">
+                                <Target className="w-3.5 h-3.5" />
+                                <span className="font-bold text-zinc-300">{path.lessons || 0}</span> Lessons
+                            </span>
+                            <span className="text-zinc-600">•</span>
+                            <span className="text-zinc-500 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span className="font-bold text-zinc-300">{path.duration || "N/A"}</span>
+                            </span>
+                        </div>
+
+                        {/* Author Info */}
+                        {(path as any).author && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-tighter">By</span>
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/[0.02] border border-white/[0.05]">
+                                    {(path as any).author.avatar && (
+                                        <img src={(path as any).author.avatar} alt={(path as any).author.name} className="w-3.5 h-3.5 rounded-full object-cover" />
+                                    )}
+                                    <span className="text-[10px] font-bold text-zinc-400 font-mono">{(path as any).author.name}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -325,7 +350,7 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                         <span className="text-neon-green/60">// </span>loot_drops
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {(path.rewards || []).map((r, i) => (
+                        {(path.rewards || []).map((r: { name: string; type: string; emoji: string }, i: number) => (
                             <motion.div
                                 key={i}
                                 whileHover={{ scale: 1.05, y: -2 }}
@@ -343,7 +368,7 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                                 </div>
                             </motion.div>
                         ))}
-                        {(path.loot || []).map((l, i) => (
+                        {(path.loot || []).map((l: string, i: number) => (
                             <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/[0.02] border border-white/[0.06] font-mono">
                                 <span className="text-sm">{i === 0 ? "🎨" : "📛"}</span>
                                 <div>
@@ -358,9 +383,9 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                 {/* === CTA Footer === */}
                 <div className="px-6 py-4 border-t border-white/[0.04] bg-white/[0.01] flex items-center justify-between font-mono">
                     <div className="flex items-center gap-3 text-[10px] text-zinc-500">
-                        <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-400/50" /> Avg. 12h/week</span>
+                        <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neon-cyan/50" /> {(path as any).enrollmentCount || (path as any).playersActive || 0} enrolled</span>
                         <span className="text-zinc-700">•</span>
-                        <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-400/50" /> {path.completionRate}% completion</span>
+                        <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-400/50" /> {path.completionRate || 0}% completion</span>
                     </div>
 
                     {isLocked ? (
@@ -370,15 +395,26 @@ export function QuestCard({ path, index, href }: { path: typeof paths[number]; i
                         </div>
                     ) : (
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                            <Link href={linkHref}>
+                            {onBeginQuest ? (
                                 <Button
+                                    onClick={() => onBeginQuest(path.slug)}
                                     size="lg"
                                     className={`btn-hacker ${path.bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
                                 >
                                     ⚔️ Begin Quest
                                     <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                 </Button>
-                            </Link>
+                            ) : (
+                                <Link href={linkHref}>
+                                    <Button
+                                        size="lg"
+                                        className={`btn-hacker ${path.bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
+                                    >
+                                        ⚔️ Begin Quest
+                                        <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                    </Button>
+                                </Link>
+                            )}
                         </motion.div>
                     )}
                 </div>

@@ -6,7 +6,6 @@ import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { AuthProvider } from "@/components/providers/auth-context";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
-import { HackerTransition } from "@/components/ui/hacker-transition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +42,7 @@ export default async function RootLayout({
           <AuthSessionProvider>
             <AuthProvider>
               <SolanaWalletProvider>
-                <HackerTransition>{children}</HackerTransition>
+                {children}
               </SolanaWalletProvider>
             </AuthProvider>
           </AuthSessionProvider>

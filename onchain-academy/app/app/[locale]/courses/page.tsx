@@ -21,6 +21,10 @@ export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
 
+    const handleBeginQuest = (slug: string) => {
+        router.push(`/courses/${slug}`);
+    };
+
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             router.push("/auth");
@@ -33,7 +37,33 @@ export default function CoursesPage() {
                 // Merge backend data with static visual data from paths based on slug
                 const merged = res.data.map(c => {
                     const staticData = paths.find(p => p.slug === c.slug) as any || {};
-                    return { ...staticData, ...c, xp: staticData.xp || 1000, duration: staticData.duration || "4 weeks" } as Course;
+
+                    // Format duration from minutes (API) or fallback to static
+                    const formatDuration = (mins: number) => {
+                        if (mins >= 60) {
+                            const hours = Math.floor(mins / 60);
+                            return `${hours} hour${hours > 1 ? 's' : ''}`;
+                        }
+                        return `${mins} mins`;
+                    };
+
+                    const difficultyMap: Record<string, number> = {
+                        beginner: 1,
+                        intermediate: 2,
+                        advanced: 3
+                    };
+
+                    return {
+                        ...staticData,
+                        ...c,
+                        xp: c.totalXP || staticData.xp || 1000,
+                        duration: typeof c.duration === 'number' ? formatDuration(c.duration) : (c.duration || staticData.duration || "N/A"),
+                        difficulty: difficultyMap[c.difficulty] || staticData.difficulty || 1,
+                        level: c.difficulty.charAt(0).toUpperCase() + c.difficulty.slice(1),
+                        playersActive: c.enrollmentCount || 0,
+                        description: c.shortDescription || c.description || staticData.description,
+                        longDesc: c.description || c.shortDescription || staticData.longDesc
+                    } as Course;
                 });
                 setCourses(merged);
                 setLoadingCourses(false);
@@ -130,7 +160,12 @@ export default function CoursesPage() {
                 {/* Quest Cards Grid — exact same component from landing page */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {displayPaths.map((path, index) => (
-                        <QuestCard key={(path as any)._id || index} path={path as any} index={index} />
+                        <QuestCard
+                            key={(path as any)._id || index}
+                            path={path as any}
+                            index={index}
+                            onBeginQuest={handleBeginQuest}
+                        />
                     ))}
                 </div>
             </main>
