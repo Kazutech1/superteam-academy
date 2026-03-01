@@ -18,6 +18,7 @@ export interface IUser extends Document {
   theme: "light" | "dark";
   isPublic: boolean;
   role: "user" | "admin";
+  isBanned: boolean;
 
   // Gamification
   totalXP: number;
@@ -26,6 +27,7 @@ export interface IUser extends Document {
   longestStreak: number;
   lastActive?: Date;
   activityDates: string[]; // "YYYY-MM-DD" strings for heatmap (last 365 days)
+  claimedStreakMilestones: number[]; // [7, 30, 100] — prevents duplicate streak milestone XP
 
   createdAt: Date;
   updatedAt: Date;
@@ -50,6 +52,7 @@ const UserSchema = new Schema<IUser>(
     theme: { type: String, enum: ["light", "dark"], default: "dark" },
     isPublic: { type: Boolean, default: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    isBanned: { type: Boolean, default: false },
 
     // Gamification
     totalXP: { type: Number, default: 0 },
@@ -58,6 +61,7 @@ const UserSchema = new Schema<IUser>(
     longestStreak: { type: Number, default: 0 },
     lastActive: { type: Date },
     activityDates: { type: [String], default: [] }, // "YYYY-MM-DD" for heatmap
+    claimedStreakMilestones: { type: [Number], default: [] },
   },
   {
     timestamps: true,

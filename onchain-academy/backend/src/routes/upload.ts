@@ -3,8 +3,10 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import path from "path";
 import fs from "fs";
+import { fileTypeFromBuffer } from "file-type";
 import { authenticate } from "../middlewares/auth";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { uploadLimiter } from "../middlewares/rateLimit";
 
 const router = Router();
 
@@ -72,6 +74,7 @@ const upload = multer({
  */
 router.post(
     "/asset",
+    uploadLimiter,
     authenticate,
     requireAdmin,
     upload.single("file"),
@@ -82,11 +85,26 @@ router.post(
                 return;
             }
 
-            const mimeType = req.file.mimetype;
+            // 🛡️ Magic Byte Validation — prevent file type spoofing
+            const type = await fileTypeFromBuffer(req.file.buffer);
+            const actualMime = type?.mime || req.file.mimetype; // Fallback to client mime if sniffing fails (for text/markdown)
 
-            if (mimeType === "application/pdf") {
-                // ─── Handle PDF locally ───────────────────────────────────────────────
-                const filename = `file-${Date.now()}-${req.file.originalname}`;
+            // Restricted list of allowed mimetypes
+            const allowedMimes = [
+                "image/jpeg", "image/png", "image/webp", "image/gif",
+                "video/mp4", "video/webm", "video/quicktime",
+                "application/pdf"
+            ];
+
+            if (!allowedMimes.includes(actualMime)) {
+                res.status(400).json({ success: false, message: `File type ${actualMime} not allowed` });
+                return;
+            }
+
+            if (actualMime === "application/pdf") {
+                // 🛡️ Path Traversal Defense — path.basename() strips directory components like ../
+                const safeName = path.basename(req.file.originalname);
+                const filename = `file-${Date.now()}-${safeName}`;
                 const filePath = path.join(LOCAL_UPLOAD_DIR, filename);
                 fs.writeFileSync(filePath, req.file.buffer);
 
@@ -97,7 +115,7 @@ router.post(
                 });
             } else {
                 // ─── Handle Images/Videos via Cloudinary ──────────────────────────────
-                const isVideo = mimeType.startsWith("video/");
+                const isVideo = actualMime.startsWith("video/");
 
                 // Upload via stream since we used memoryStorage
                 const uploadStream = cloudinary.uploader.upload_stream(

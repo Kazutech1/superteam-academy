@@ -5,6 +5,12 @@ import { Enrollment } from "../models/enrollment";
 import { MilestoneProgress } from "../models/milestoneProgress";
 import { User } from "../models/users";
 import { updateStreak } from "../services/streak";
+import { getLevel } from "../services/gamification";
+import {
+  checkProgressAchievements,
+  checkSkillAchievements,
+  checkPerfectScore,
+} from "../services/achievements";
 
 // ─── Admin: Create Course ─────────────────────────────────────────────────────
 
@@ -581,11 +587,45 @@ export const completeMilestone = async (req: Request, res: Response): Promise<vo
 
     await progress.save();
 
-    // Update streak
+    // Update streak and award daily XP bonuses
+    let streakResult = { xpAwarded: 0, currentStreak: 0, milestoneReached: null as number | null };
     try {
-      await updateStreak(userId);
+      streakResult = await updateStreak(userId);
     } catch (streakErr) {
       console.error("[completeMilestone] streak update failed:", streakErr);
+    }
+
+    // Award challenge XP for first-time code_challenge pass
+    let challengeXP = 0;
+    if (test.type === "code_challenge" && passed) {
+      const existingPass = progress.testAttempts.find(
+        (a) => a.testId.toString() === testId && a.passed
+      );
+      // Only first-time pass awards XP (attempts === 1 means this is the first pass)
+      const isFirstPass =
+        existingAttemptIndex === -1 ||
+        (existingAttemptIndex > -1 &&
+          progress.testAttempts[existingAttemptIndex].attempts === 1 &&
+          progress.testAttempts[existingAttemptIndex].passed);
+      if (isFirstPass) {
+        challengeXP = 25;
+        const user = await User.findById(userId);
+        if (user) {
+          user.totalXP = (user.totalXP || 0) + challengeXP;
+          user.level = getLevel(user.totalXP);
+          await user.save();
+        }
+      }
+    }
+
+    // Perfect score achievement — 100% on first attempt
+    if (score === 100) {
+      const attempt = progress.testAttempts.find((a) => a.testId.toString() === testId);
+      if (attempt && attempt.attempts === 1) {
+        checkPerfectScore(userId).catch((err) =>
+          console.error("[completeMilestone] perfect score check failed:", err)
+        );
+      }
     }
 
     // Check if ALL 5 milestones are now complete
@@ -608,6 +648,25 @@ export const completeMilestone = async (req: Request, res: Response): Promise<vo
       await Course.findByIdAndUpdate(course._id, {
         $inc: { completionCount: 1 },
       });
+
+      // Check progress + skill achievements on course completion
+      const completedEnrollments = await Enrollment.find({
+        userId,
+        completedAt: { $exists: true, $ne: null },
+      })
+        .populate<{ courseId: { topic: string } }>("courseId", "topic")
+        .lean();
+
+      const completedTopics = completedEnrollments
+        .map((e) => (e.courseId as any)?.topic)
+        .filter(Boolean);
+
+      checkProgressAchievements(userId).catch((err) =>
+        console.error("[completeMilestone] progress achievement check failed:", err)
+      );
+      checkSkillAchievements(userId, completedTopics).catch((err) =>
+        console.error("[completeMilestone] skill achievement check failed:", err)
+      );
     }
 
     res.status(200).json({
@@ -626,6 +685,11 @@ export const completeMilestone = async (req: Request, res: Response): Promise<vo
         allTestsPassed: progress.allTestsPassed,
         courseComplete,
         progress,
+        xpAwarded: streakResult.xpAwarded + challengeXP,
+        streakBonus: streakResult.xpAwarded,
+        challengeXP,
+        currentStreak: streakResult.currentStreak,
+        streakMilestoneReached: streakResult.milestoneReached,
       },
     });
   } catch (error) {
@@ -806,22 +870,47 @@ export const completeLesson = async (req: Request, res: Response): Promise<void>
     const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
 
     // Add to completedLessons only if not already present
+    let lessonXP = 0;
     if (!progress.completedLessons.some((id) => id.equals(lessonObjectId))) {
       progress.completedLessons.push(lessonObjectId);
+      await progress.save();
+
+      // Award lesson XP (first completion only)
+      lessonXP = 10;
+      const user = await User.findById(userId);
+      if (user) {
+        user.totalXP = (user.totalXP || 0) + lessonXP;
+        user.level = getLevel(user.totalXP);
+        await user.save();
+      }
+    } else {
       await progress.save();
     }
 
     // Update streak — counts lesson completion activity
+    let streakResultLesson = { xpAwarded: 0, currentStreak: 0, milestoneReached: null as number | null };
     try {
-      await updateStreak(userId);
+      streakResultLesson = await updateStreak(userId);
     } catch (streakErr) {
       console.error("[completeLesson] streak update failed:", streakErr);
     }
 
+    // Check progress achievements (fire-and-forget)
+    checkProgressAchievements(userId).catch((err) =>
+      console.error("[completeLesson] achievement check failed:", err)
+    );
+
     res.status(200).json({
       success: true,
       message: "Lesson marked as complete",
-      data: { completedLessons: progress.completedLessons },
+      data: {
+        completedLessons: progress.completedLessons,
+        xpAwarded: lessonXP + streakResultLesson.xpAwarded,
+        lessonXP,
+        streakBonus: streakResultLesson.xpAwarded,
+        currentStreak: streakResultLesson.currentStreak,
+        streakMilestoneReached: streakResultLesson.milestoneReached,
+      },
     });
   } catch (error) {
     console.error("Complete lesson error:", error);

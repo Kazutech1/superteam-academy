@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { User } from "../models/users";
 
 interface JWTPayload {
     id: string;
@@ -11,8 +12,9 @@ interface JWTPayload {
  * Verifies the Bearer JWT from the Authorization header.
  * Attaches the decoded payload to `req.user` on success.
  * Returns 401 if the token is missing, invalid, or expired.
+ * Returns 403 if the user is banned.
  */
-export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -24,6 +26,14 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JWTPayload;
+
+        // Ban check — lightweight select, keeps auth fast
+        const user = await User.findById(decoded.id).select("isBanned").lean();
+        if (user?.isBanned) {
+            res.status(403).json({ success: false, message: "Your account has been suspended" });
+            return;
+        }
+
         (req as any).user = { id: decoded.id };
         next();
     } catch (err: any) {

@@ -5,6 +5,7 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import mongoSanitize from "express-mongo-sanitize";
 
 dotenv.config();
 // console.log("Mongo URI: ", process.env.MONGO_URI);
@@ -31,6 +32,9 @@ app.set("trust proxy", true);
 
 // Middleware
 app.use(express.json());
+
+// NoSQL Injection protection — strips keys starting with $ or containing .
+app.use(mongoSanitize());
 
 // CORS
 app.use(cors());
@@ -91,7 +95,12 @@ import profileRoutes from "./routes/profile";
 import dashboardRoutes from "./routes/dashboard";
 import leaderboardRoutes from "./routes/leaderboard";
 import uploadRoutes from "./routes/upload";
+import achievementRoutes from "./routes/achievements";
+import communityRoutes from "./routes/community";
+import adminRoutes from "./routes/admin";
 import swaggerSpecs from "./swagger";
+import { seedAchievementTypes } from "./models/achievementType";
+import { generalLimiter } from "./middlewares/rateLimit";
 
 // Swagger UI (available in all environments)
 if (isDevelopment) {
@@ -106,6 +115,9 @@ if (isDevelopment) {
   );
 }
 
+// Global rate limiter — safety net (200 req/min per IP)
+app.use(generalLimiter);
+
 // Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/courses", courseRoutes);
@@ -113,6 +125,9 @@ app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/leaderboard", leaderboardRoutes);
 app.use("/api/v1/upload", uploadRoutes);
+app.use("/api/v1/achievements", achievementRoutes);
+app.use("/api/v1/community", communityRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Root route
 app.get("/", (req: Request, res: Response) => {
@@ -141,6 +156,9 @@ const connectDB = async (): Promise<void> => {
     });
 
     console.log("✅ MongoDB connected successfully");
+
+    // Seed achievement types (upsert — safe to run every startup)
+    await seedAchievementTypes();
 
     // Only register these AFTER successful connection
     mongoose.connection.on("disconnected", () => {
