@@ -1,5 +1,22 @@
 import { fetchWithAuth } from "./api";
 
+// ─── Enums & Constants ───
+
+export type Difficulty = "beginner" | "intermediate" | "advanced";
+export type CourseStatus = "draft" | "published" | "archived";
+export type CourseTopic =
+    | "solana-basics"
+    | "smart-contracts"
+    | "defi"
+    | "nfts"
+    | "tokens"
+    | "web3-frontend"
+    | "security"
+    | "tooling";
+
+export type LessonType = "video" | "document" | "text" | "doc"; // "doc" kept for legacy mapping
+export type TestType = "quiz" | "code_challenge" | "test";
+
 // ─── Interfaces ───
 
 export interface CourseAuthor {
@@ -9,22 +26,55 @@ export interface CourseAuthor {
 }
 
 export interface Lesson {
-    _id?: string;
-    id?: string;
+    _id: string;
     title: string;
-    type: "video" | "doc" | "test";
-    duration: string;
+    type: LessonType;
+    content?: string;
+    url?: string;
+    duration?: number; // In minutes
+    order: number;
+    completed?: boolean;
+}
+
+export interface QuizOption {
+    label: string;
+    isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+    _id: string;
+    question: string;
+    options: QuizOption[];
+    explanation?: string;
+}
+
+export interface CodeChallenge {
+    prompt: string;
+    starterCode: string;
+    language: "typescript" | "rust" | "javascript";
+}
+
+export interface Test {
+    _id: string;
+    title: string;
+    type: TestType;
+    passThreshold: number;
+    points: number;
+    questions?: QuizQuestion[];
+    codeChallenge?: CodeChallenge;
     completed?: boolean;
 }
 
 export interface Milestone {
-    _id?: string;
-    id?: string;
+    _id: string;
     title: string;
     description: string;
-    xp: number;
+    order: number;
+    xpReward: number; // Renamed from xp to match backend
     lessons: Lesson[];
+    tests: Test[];
     completed?: boolean;
+    allItems?: any[]; // For frontend UI mapping
 }
 
 export interface Course {
@@ -35,53 +85,45 @@ export interface Course {
     shortDescription: string;
     thumbnail?: string;
     tags: string[];
-    difficulty: "beginner" | "intermediate" | "advanced";
-    topic: string;
+    difficulty: Difficulty;
+    topic: CourseTopic;
+    status: CourseStatus;
     milestones: Milestone[];
     author: CourseAuthor;
     createdAt: string;
+    updatedAt: string;
+
+    // Denormalized stats
     totalXP: number;
+    duration: number; // Total minutes
     enrollmentCount: number;
+    completionCount: number;
+    rating: number;
+    ratingCount: number;
 
-    // Front-end calculated or injected fields
+    // Frontend UI-only properties (for visual metadata mapping)
     level?: string;
-    xp?: number;
-    modules?: number;
-    courseLessons?: number; // mapped to avoid conflict
-    duration?: string | number; // allow number for minutes from API
-
-    boss?: string;
-    bossEmoji?: string;
-    bossHp?: number;
-    ringColor?: string;
-    borderColor?: string;
-    glowColor?: string;
-    textColor?: string;
-    bgAccent?: string;
-    tag?: string;
-    tagColor?: string;
-    questIcon?: string;
-    rarity?: string;
-    rarityColor?: string;
-    rewards?: { name: string; type: string; emoji: string }[];
-    loot?: string[];
+    progress?: number;
     playersActive?: number;
     completionRate?: number;
-    locked?: boolean;
 }
 
 export interface PaginatedCourses {
     success: boolean;
     data: Course[];
-    total: number;
-    page: number;
-    pages: number;
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }
 
 export interface SingleCourseResponse {
     success: boolean;
     data: {
-        course: Course;
+        course: Course & { milestoneCount: number; lessonCount: number };
+        reviews: any[];
         enrollment?: any;
         milestoneProgress?: any[];
     };
@@ -120,15 +162,27 @@ export const coursesApi = {
         return fetchWithAuth(`/courses/${slug}/enroll`, { method: "POST" });
     },
 
-
-
     /**
      * Complete a test attempt for a milestone
      */
-    async completeMilestone(slug: string, milestoneId: string, testId: string, score: number): Promise<any> {
+    async completeMilestone(
+        slug: string,
+        milestoneId: string,
+        testId: string,
+        payload: { quizAnswers?: any[]; codeResults?: any[] }
+    ): Promise<any> {
         return fetchWithAuth(`/courses/${slug}/milestones/${milestoneId}/complete`, {
             method: "POST",
-            body: JSON.stringify({ testId, score }),
+            body: JSON.stringify({ testId, ...payload }),
+        });
+    },
+
+    /**
+     * Mark a lesson as complete
+     */
+    async completeLesson(slug: string, milestoneId: string, lessonId: string): Promise<any> {
+        return fetchWithAuth(`/courses/${slug}/milestones/${milestoneId}/lessons/${lessonId}/complete`, {
+            method: "POST",
         });
     },
 
@@ -137,5 +191,15 @@ export const coursesApi = {
      */
     async claimMilestoneXP(slug: string, milestoneId: string): Promise<any> {
         return fetchWithAuth(`/courses/${slug}/milestones/${milestoneId}/claim-xp`, { method: "POST" });
+    },
+
+    /**
+     * Submit a rating/review
+     */
+    async rateCourse(slug: string, rating: number, comment?: string): Promise<any> {
+        return fetchWithAuth(`/courses/${slug}/rate`, {
+            method: "POST",
+            body: JSON.stringify({ rating, comment }),
+        });
     }
 };

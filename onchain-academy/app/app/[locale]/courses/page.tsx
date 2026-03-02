@@ -20,6 +20,9 @@ export default function CoursesPage() {
     const router = useRouter();
     const [courses, setCourses] = useState<Course[]>([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
+    const [pagination, setPagination] = useState<any>(null);
+
+    const [dashboardData, setDashboardData] = useState<any>(null);
 
     const handleBeginQuest = (slug: string) => {
         router.push(`/courses/${slug}`);
@@ -33,41 +36,69 @@ export default function CoursesPage() {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            coursesApi.getCourses().then((res) => {
-                // Merge backend data with static visual data from paths based on slug
-                const merged = res.data.map(c => {
-                    const staticData = paths.find(p => p.slug === c.slug) as any || {};
+            const fetchAll = async () => {
+                try {
+                    const [coursesRes, dashRes] = await Promise.all([
+                        coursesApi.getCourses({ page: 1, limit: 12 }),
+                        import("@/lib/dashboard").then(m => m.dashboardApi.getDashboardData())
+                    ]);
 
-                    // Format duration from minutes (API) or fallback to static
-                    const formatDuration = (mins: number) => {
-                        if (mins >= 60) {
-                            const hours = Math.floor(mins / 60);
-                            return `${hours} hour${hours > 1 ? 's' : ''}`;
-                        }
-                        return `${mins} mins`;
-                    };
+                    const activeMap = new Map(dashRes.data.activeCourses.map(c => [c.slug, c]));
 
-                    const difficultyMap: Record<string, number> = {
-                        beginner: 1,
-                        intermediate: 2,
-                        advanced: 3
-                    };
+                    // Merge backend data with static visual data and dashboard progress
+                    const merged = coursesRes.data.map(c => {
+                        const staticData = paths.find(p => p.slug === c.slug) as any || {
+                            ringColor: "#00ffa3",
+                            borderColor: "border-neon-green/30",
+                            glowColor: "rgba(0,255,163,0.15)",
+                            textColor: "text-neon-green",
+                            bgAccent: "bg-neon-green",
+                            questIcon: "📜"
+                        };
 
-                    return {
-                        ...staticData,
-                        ...c,
-                        xp: c.totalXP || staticData.xp || 1000,
-                        duration: typeof c.duration === 'number' ? formatDuration(c.duration) : (c.duration || staticData.duration || "N/A"),
-                        difficulty: difficultyMap[c.difficulty] || staticData.difficulty || 1,
-                        level: c.difficulty.charAt(0).toUpperCase() + c.difficulty.slice(1),
-                        playersActive: c.enrollmentCount || 0,
-                        description: c.shortDescription || c.description || staticData.description,
-                        longDesc: c.description || c.shortDescription || staticData.longDesc
-                    } as Course;
-                });
-                setCourses(merged);
-                setLoadingCourses(false);
-            }).catch(console.error);
+                        const active = activeMap.get(c.slug);
+
+                        // Format duration from minutes (API) or fallback to static
+                        const formatDuration = (mins: number) => {
+                            if (mins >= 60) {
+                                const hours = Math.floor(mins / 60);
+                                return `${hours} hour${hours > 1 ? 's' : ''}`;
+                            }
+                            return `${mins} mins`;
+                        };
+
+                        const difficultyMap: Record<string, number> = {
+                            beginner: 1,
+                            intermediate: 2,
+                            advanced: 3
+                        };
+
+                        return {
+                            ...staticData,
+                            ...c,
+                            xp: c.totalXP || staticData.xp || 1000,
+                            duration: typeof c.duration === 'number' ? formatDuration(c.duration) : (c.duration || staticData.duration || "N/A"),
+                            difficulty: difficultyMap[c.difficulty] || staticData.difficulty || 1,
+                            level: c.difficulty.charAt(0).toUpperCase() + c.difficulty.slice(1),
+                            playersActive: c.enrollmentCount || 0,
+                            description: c.shortDescription || c.description || staticData.description,
+                            longDesc: c.description || c.shortDescription || staticData.longDesc,
+                            enrolled: !!active,
+                            progress: active?.progress.percent || 0
+                        } as Course;
+                    });
+
+                    setCourses(merged);
+                    setPagination(coursesRes.pagination);
+                    setDashboardData(dashRes.data);
+                    setLoadingCourses(false);
+                } catch (err) {
+                    console.error(err);
+                    setLoadingCourses(false);
+                }
+            };
+
+            fetchAll();
         }
     }, [isLoading, isAuthenticated]);
 

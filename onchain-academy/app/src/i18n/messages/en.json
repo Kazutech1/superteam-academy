@@ -11,7 +11,7 @@
     "title": "Master Solana Development",
     "description": "Learn to build on Solana with interactive courses."
   },
-    "Hero": {
+  "Hero": {
     "terminalPrefix": ">",
     "terminalPrompt": "onchain_academy",
     "headlinePrefix": "Level up your skills.",
@@ -39,7 +39,6 @@
     "notTutorial": "Not a Tutorial.",
     "anRPG": "An RPG.",
     "description": "Level up your character. Grow skill trees. Stack combos. Complete daily quests. Earn loot. Climb the arena leaderboard. Every line of code is an attack.",
-    
     "arenaLeaderboard": "Arena Leaderboard",
     "weekly": "Weekly",
     "season": "Season",
@@ -54,7 +53,6 @@
     "xp": "XP",
     "thisWeek": "this week",
     "viewFullBoard": "View Full Board",
-    
     "achievements": "Achievements",
     "unlocked": "Unlocked",
     "firstSteps": "First Steps",
@@ -74,7 +72,6 @@
     "rare": "Rare",
     "epic": "Epic",
     "legendary": "Legendary",
-    
     "seasonBattlePass": "Season 1 Battle Pass",
     "tier": "Tier",
     "free": "FREE",
@@ -91,7 +88,6 @@
     "title": "Title",
     "nextRewardIn": "Next reward in",
     "seasonEndsIn": "Season ends in",
-    
     "playerCard": "Player Card",
     "preview": "Preview",
     "joined": "Joined",
@@ -106,7 +102,6 @@
     "skillTrees": "skill_trees",
     "defi": "DeFi",
     "security": "Security",
-    
     "activeQuests": "Active Quests",
     "resetsIn": "Resets in",
     "daily": "Daily",
@@ -125,7 +120,6 @@
     "quests": "Quests",
     "totalXp": "Total XP",
     "viewAll": "View All",
-    
     "course": "Course",
     "standard": "Standard",
     "starter": "Starter",
@@ -142,28 +136,23 @@
     "completion": "completion",
     "locked": "Locked",
     "beginQuest": "Begin Quest",
-    
     "beginner": "Beginner",
     "intermediate": "Intermediate",
     "advanced": "Advanced",
     "expert": "Expert",
-    
     "common": "Common",
     "uncommon": "Uncommon",
     "rare": "Rare",
     "epic": "Epic",
     "legendary": "Legendary",
-    
     "sixWeeks": "6 weeks",
     "tenWeeks": "10 weeks",
     "twelveWeeks": "12 weeks",
     "eightWeeks": "8 weeks",
-    
     "mostPopular": "🌟 Most Popular",
     "recommended": "⚡ Recommended",
     "new": "🆕 New",
     "comingSoon": "🔒 Coming Soon",
-    
     "solanaFundamentals": "Solana Fundamentals",
     "solanaFundamentalsDesc": "Accounts, transactions, programs, and the runtime model.",
     "solanaFundamentalsLongDesc": "Master the Solana runtime, understand accounts, craft transactions, and deploy your first program. The foundation every builder needs.",
@@ -172,7 +161,6 @@
     "firstStepsBadge": "First Steps Badge",
     "profileBorder": "Profile Border",
     "titleInitiate": "Title: Initiate",
-    
     "anchorFramework": "Anchor Framework",
     "anchorFrameworkDesc": "PDAs, CPIs, Token-2022, Metaplex Core, and full-stack dApps.",
     "anchorFrameworkLongDesc": "Build, test, and deploy production programs with Anchor. Master PDAs, cross-program invocations, Token-2022, and Metaplex Core NFTs.",
@@ -181,7 +169,6 @@
     "anchorExpertBadge": "Anchor Expert Badge",
     "animatedAvatar": "Animated Avatar",
     "titleBuilder": "Title: Builder",
-    
     "defiDeveloper": "DeFi Developer",
     "defiDeveloperDesc": "AMMs, lending, oracles, liquidation engines.",
     "defiDeveloperLongDesc": "Build production DeFi protocols from scratch. AMMs, lending markets, oracle integration, liquidation engines, and MEV protection.",
@@ -190,7 +177,6 @@
     "defiMasterBadge": "DeFi Master Badge",
     "legendarySkin": "Legendary Skin",
     "titleProtocolMage": "Title: Protocol Mage",
-    
     "solanaSecurity": "Solana Security",
     "solanaSecurityDesc": "Audit programs, find vulns, secure protocols.",
     "solanaSecurityLongDesc": "Become a security expert. Learn to audit Solana programs, find vulnerabilities, build exploit PoCs, and secure protocols against attacks.",
@@ -205,33 +191,26 @@
     "yourSkills": "Your Skills,",
     "gamified": "Gamified",
     "description": "Every interaction earns rewards. Every milestone unlocks new abilities. This isn't a tutorial — it's a quest.",
-    
     "level": "Lvl",
     "tests": "tests",
     "you": "you",
     "builderNft": "Builder NFT",
     "tier": "Tier",
-    
     "xpLeveling": "XP & Leveling",
     "xpLevelingDesc": "Earn soulbound XP tokens on Solana for every lesson and challenge. Your power grows with every line of code.",
     "levelFormula": "Level formula: √(XP/100)",
-    
     "soulboundNfts": "Soulbound NFTs",
     "soulboundNftsDesc": "Earn evolving Metaplex Core NFTs that upgrade in-place as you progress. Proof of mastery, on-chain.",
     "credentialsIssued": "32,000+ credentials issued",
-    
     "streakSystem": "Streak System",
     "streakSystemDesc": "Maintain daily streaks. Hit milestones at 7, 30, and 100 days. Streak freezes for when life happens.",
     "topStreak": "Top streak: 247 days",
-    
     "leaderboard": "Leaderboard",
     "leaderboardDesc": "Compete with builders worldwide. Weekly, monthly, and all-time rankings derived from on-chain XP.",
     "activeBuilders": "12,400+ active builders",
-    
     "achievements": "Achievements",
     "achievementsDesc": "Unlock 256 achievements across progress, skills, streaks, and community. Five rarity tiers from Common to Legendary.",
     "rarityTiers": "5 rarity tiers",
-    
     "codeChallenges": "Code Challenges",
     "codeChallengesDesc": "Write Rust and TypeScript in-browser with real-time test feedback and instant XP on completion.",
     "challengesCount": "200+ challenges"
@@ -244,12 +223,10 @@
     "description": "12,400+ builders leveling up. Here's what the top-ranked players think.",
     "xp": "XP",
     "daysStreak": "d streak",
-    
     "grandmasterLvl": "Grandmaster • Lvl {level}",
     "championLvl": "Champion • Lvl {level}",
     "veteranLvl": "Veteran • Lvl {level}",
     "warriorLvl": "Warrior • Lvl {level}",
-    
     "rafaelQuote": "I went from zero Solana knowledge to deploying production programs in 8 weeks. The XP system made me genuinely addicted to learning. Currently on a 45-day streak.",
     "mariaQuote": "The boss challenges are insane. Hardest coding tests I've done, but the NFT credentials you earn are legit — I got hired at a Solana protocol partly because of them.",
     "lucasQuote": "Duolingo for blockchain, except you actually build real things. I check my streak every morning. The battle pass rewards keep me coming back.",
@@ -262,16 +239,13 @@
     "readyToStart": "Ready to start your",
     "quest": "quest?",
     "description": "Join 12,400+ builders leveling up their Solana skills. Earn XP, unlock achievements, and claim your soulbound credentials.",
-    
     "xp": "XP",
     "signupBonus": "signup bonus",
     "earlyAdopter": "Early Adopter",
     "badge": "badge",
     "streakFreeze": "3-day",
     "streakFreezeDesc": "streak freeze",
-    
     "beginJourney": "Begin Your Journey",
-    
     "subscribeCommand": "subscribe --notifications quest-lines seasonal-events",
     "emailPlaceholder": "your@email.com",
     "subscribe": "Subscribe",
@@ -279,29 +253,24 @@
   },
   "Footer": {
     "description": "The ultimate open-source learning platform for Solana developers. Build, ship, and earn on-chain credentials.",
-    
     "platform": "Platform",
     "courses": "Courses",
     "leaderboard": "Leaderboard",
     "credentials": "Credentials",
     "dashboard": "Dashboard",
     "bounties": "Bounties",
-    
     "community": "Community",
     "discord": "Discord",
     "twitter": "Twitter",
     "github": "GitHub",
     "superteam": "Superteam",
-    
     "resources": "Resources",
     "documentation": "Documentation",
     "apiReference": "API Reference",
     "contributing": "Contributing",
     "brandKit": "Brand Kit",
-    
     "builtOnSolana": "Built on Solana",
     "solanaDescription": "Powered by Solana blockchain for XP tokens, credentials, and verifiable achievements.",
-    
     "copyright": "echo \"© 2024 Superteam Academy. Open Source under MIT License.\"",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
@@ -312,7 +281,6 @@
     "xpBonus": "500 XP Bonus",
     "earlyAdopterBadge": "Early Adopter Badge",
     "streakFreezes": "3x Streak Freezes",
-    
     "solanaWallet": "Solana Wallet",
     "connectToEarnXp": "Connect to earn XP",
     "signInWithWallet": "Sign in with wallet",
@@ -321,7 +289,6 @@
     "syncDevProfile": "Sync your dev profile",
     "signInWithGithub": "Sign in with GitHub",
     "recommended": "Recommended",
-    
     "linkYourAccounts": "Link Your Accounts",
     "linkAccountsDesc": "Connect multiple auth methods. Use any of them to sign in.",
     "required": "Required",
@@ -331,7 +298,6 @@
     "walletRequiredDesc": "Link a Solana wallet to finalize courses and receive soulbound NFT credentials on-chain.",
     "allAccountsLinked": "All accounts linked! You can sign in with any method.",
     "continueToDashboard": "Continue to Dashboard",
-    
     "systemStatus": "system_status",
     "join": "Join",
     "buildersLevelingUp": "builders leveling up.",
@@ -346,7 +312,6 @@
     "xp": "XP",
     "noStreak": "No streak",
     "signUpToActivate": "Sign up to activate your player card",
-    
     "cdHome": "cd ../home",
     "returningPlayer": "returning_player",
     "startYourQuest": "Start Your Quest",
@@ -358,12 +323,10 @@
     "walletAuthFailed": "Wallet auth failed",
     "googleAuthFailed": "Google auth failed",
     "githubClientIdNotConfigured": "GitHub client ID not configured",
-    
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign In",
     "newToSuperteam": "New to Superteam Academy?",
     "createAccount": "Create Account",
-    
     "byContinuing": "By continuing, you agree to our",
     "termsOfService": "Terms of Service",
     "and": "and",
@@ -372,17 +335,14 @@
   "Dashboard": {
     "connecting": "CONNECTING_TO_SOLANA_V1...",
     "failedToLoad": "Failed to load dashboard data",
-    
     "courses": "Courses",
     "leaderboard": "Leaderboard",
     "profile": "Profile",
     "signOut": "Sign Out",
-    
     "playerDashboard": "player_dashboard",
     "welcomeToArena": "Welcome to the Arena,",
     "builder": "Builder",
     "reviewStats": "Review your stats, claim rewards, and choose your next quest.",
-    
     "playerCard": "Player Card",
     "live": "Live",
     "active": "Active",
@@ -391,12 +351,10 @@
     "totalXp": "Total XP",
     "dayStreak": "Day Streak",
     "viewFullProfile": "View Full Profile",
-    
     "trophies": "Trophies",
     "unlocked": "Unlocked",
     "noLootYet": "No loot yet",
     "completeQuests": "Complete quests to earn rewards.",
-    
     "activeQuests": "Active Quests",
     "browseQuests": "Browse Quests",
     "xp": "XP",
@@ -405,8 +363,8 @@
     "noActiveQuests": "No Active Quests",
     "noEnrolledCourses": "You haven't enrolled in any courses yet.",
     "startFirstQuest": "Start Your First Quest",
-    
-    "recommendedQuests": "Recommended Quests"
+    "recommendedQuests": "Recommended Quests",
+    "moreAchievements": "more achievements"
   },
   "Profile": {
     "connecting": "CONNECTING_TO_USER_NODE...",
@@ -415,14 +373,12 @@
     "profileNotFound": "User profile not found or is set to private.",
     "returnToDashboard": "Return to Dashboard",
     "cdDashboard": "cd ../dashboard",
-    
     "grandmaster": "Grandmaster",
     "champion": "Champion",
     "veteran": "Veteran",
     "warrior": "Warrior",
     "fighter": "Fighter",
     "initiate": "Initiate",
-    
     "publicProfile": "Public Profile",
     "privateProfile": "Private Profile",
     "editProfile": "Edit Profile",
@@ -430,7 +386,6 @@
     "noBio": "No bio provided.",
     "joined": "Joined",
     "website": "Website",
-    
     "totalXp": "Total XP",
     "level": "Level",
     "streak": "Streak",
@@ -440,9 +395,7 @@
     "xpToLevel": "{xp} XP to Level {level}",
     "xpLocked": "XP Locked",
     "xpLockedDesc": "Finish your active courses to unlock this XP and level up faster!",
-    "skillTree": "Skill Tree"
+    "skillTree": "Skill Tree",
+    "achievements": "Achievements"
   }
 }
-
-
-

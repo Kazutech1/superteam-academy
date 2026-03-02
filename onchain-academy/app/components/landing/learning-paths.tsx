@@ -181,16 +181,54 @@ export function QuestCard({
     path,
     index,
     href,
-    onBeginQuest
+    onBeginQuest,
+    progress: manualProgress,
+    isEnrolled: manualEnrolled
 }: {
     path: any;
     index: number;
     href?: string;
-    onBeginQuest?: (slug: string) => void
+    onBeginQuest?: (slug: string) => void;
+    progress?: number;
+    isEnrolled?: boolean;
 }) {
     const t = useTranslations("LearningPaths");
     const isLocked = 'locked' in path && path.locked;
     const linkHref = href || (isLocked ? "#" : `/courses/${path.slug}`);
+
+    // Enrollment status check
+    const isEnrolled = manualEnrolled !== undefined ? manualEnrolled : (path.enrolled || false);
+    const progress = manualProgress !== undefined ? manualProgress : (path.progress || 0);
+    const isCompleted = progress === 100;
+
+    // Helper to get text: prioritize direct value, then translation key
+    const getText = (val: string, key?: string) => {
+        if (val) return val;
+        if (key) return t(key);
+        return "";
+    };
+
+    // Dynamic visual metadata defaults based on difficulty
+    const diff = path.difficulty || 1;
+    const defaults = {
+        ringColor: diff === 1 ? "#f97316" : diff === 2 ? "#00ffa3" : diff === 3 ? "#00f0ff" : "#ef4444",
+        borderColor: diff === 1 ? "border-orange-500/30" : diff === 2 ? "border-neon-green/30" : diff === 3 ? "border-neon-cyan/30" : "border-red-500/30",
+        glowColor: diff === 1 ? "rgba(249,115,22,0.15)" : diff === 2 ? "rgba(0,255,163,0.15)" : diff === 3 ? "rgba(0,240,255,0.15)" : "rgba(239,68,68,0.15)",
+        textColor: diff === 1 ? "text-orange-400" : diff === 2 ? "text-neon-green" : diff === 3 ? "text-neon-cyan" : "text-red-400",
+        bgAccent: diff === 1 ? "bg-orange-500" : diff === 2 ? "bg-neon-green" : diff === 3 ? "bg-neon-cyan" : "bg-red-500",
+        bossEmoji: diff === 1 ? "🤖" : diff === 2 ? "⚓" : diff === 3 ? "💀" : "🐉",
+        rarity: diff === 1 ? "Common" : diff === 2 ? "Rare" : diff === 3 ? "Epic" : "Legendary",
+        rarityColor: diff === 1 ? "text-zinc-400" : diff === 2 ? "text-blue-400" : diff === 3 ? "text-neon-purple" : "text-amber-400",
+    };
+
+    const ringColor = path.ringColor || defaults.ringColor;
+    const borderColor = path.borderColor || defaults.borderColor;
+    const glowColor = path.glowColor || defaults.glowColor;
+    const textColor = path.textColor || defaults.textColor;
+    const bgAccent = path.bgAccent || defaults.bgAccent;
+    const bossEmoji = path.bossEmoji || defaults.bossEmoji;
+    const rarity = path.rarityKey ? t(path.rarityKey) : (path.rarity || defaults.rarity);
+    const rarityColor = path.rarityColor || defaults.rarityColor;
 
     return (
         <motion.div
@@ -203,12 +241,12 @@ export function QuestCard({
             {/* Outer glow on hover */}
             <div
                 className="absolute -inset-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
-                style={{ background: `radial-gradient(ellipse, ${path.glowColor}, transparent 70%)` }}
+                style={{ background: `radial-gradient(ellipse, ${glowColor}, transparent 70%)` }}
             />
 
             <div className={`relative border ${isLocked ? "border-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.15]"} bg-[#080c14] overflow-hidden transition-all duration-500 ${isLocked ? "opacity-70" : ""}`}>
                 {/* Top accent line */}
-                <div className={`h-[2px] ${path.bgAccent || "bg-zinc-700"}`} />
+                <div className={`h-[2px] ${bgAccent || "bg-zinc-700"}`} />
 
                 {/* Corner brackets */}
                 <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-neon-green/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
@@ -223,20 +261,20 @@ export function QuestCard({
                         <div className="flex items-start gap-4 flex-1 min-w-0">
                             <motion.div
                                 whileHover={!isLocked ? { rotate: [0, -10, 10, -5, 0], scale: 1.1 } : {}}
-                                className={`w-16 h-16 border ${isLocked ? "border-white/10" : path.borderColor} bg-white/[0.02] flex-shrink-0 relative flex items-center justify-center text-2xl overflow-hidden`}
+                                className={`w-16 h-16 border ${isLocked ? "border-white/10" : borderColor} bg-white/[0.02] flex-shrink-0 relative flex items-center justify-center text-2xl overflow-hidden`}
                             >
                                 {isLocked ? (
                                     <Lock className="w-6 h-6 text-zinc-600" />
                                 ) : (path as any).thumbnail ? (
-                                    <img src={(path as any).thumbnail} alt={t(path.titleKey)} className="w-full h-full object-cover" />
+                                    <img src={(path as any).thumbnail} alt={getText(path.title, path.titleKey)} className="w-full h-full object-cover" />
                                 ) : (
-                                    path.questIcon
+                                    path.questIcon || "📜"
                                 )}
                                 {!isLocked && (
                                     <motion.div
                                         animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }}
                                         transition={{ duration: 2, repeat: Infinity }}
-                                        className={`absolute inset-0 border ${path.borderColor}`}
+                                        className={`absolute inset-0 border ${borderColor}`}
                                     />
                                 )}
                             </motion.div>
@@ -245,22 +283,22 @@ export function QuestCard({
                                 {/* Tags row */}
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className={`text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 border ${path.tagColor || "border-white/10 text-zinc-500"}`}>
-                                        {t(path.tagKey) || t("course")}
+                                        {path.tagKey ? t(path.tagKey) : (path.tag || t("course"))}
                                     </span>
-                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest ${path.rarityColor || "text-zinc-600"}`}>
-                                        {t(path.rarityKey) || t("standard")}
+                                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest ${rarityColor || "text-zinc-600"}`}>
+                                        {rarity}
                                     </span>
                                 </div>
 
                                 {/* Title */}
                                 <h3 className="text-xl md:text-2xl font-black font-mono text-white">
-                                    {t(path.titleKey)}
+                                    {getText(path.title, path.titleKey)}
                                 </h3>
 
                                 {/* Difficulty + Level */}
                                 <div className="flex items-center gap-3">
-                                    <DifficultyStars count={path.difficulty || 1} color={path.textColor || "text-zinc-500"} />
-                                    <span className={`text-xs font-bold font-mono ${path.textColor || "text-zinc-400"}`}>{t(path.levelKey) || t("starter")}</span>
+                                    <DifficultyStars count={path.difficulty || 1} color={textColor || "text-zinc-500"} />
+                                    <span className={`text-xs font-bold font-mono ${textColor || "text-zinc-400"}`}>{path.levelKey ? t(path.levelKey) : (path.level || t("starter"))}</span>
                                 </div>
                             </div>
                         </div>
@@ -270,19 +308,19 @@ export function QuestCard({
                             <motion.div
                                 animate={!isLocked ? { scale: [1, 1.05, 1] } : {}}
                                 transition={{ duration: 2, repeat: Infinity }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 ${path.bgAccent || "bg-zinc-800"} relative overflow-hidden`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 ${bgAccent || "bg-zinc-800"} relative overflow-hidden`}
                             >
                                 <Zap className="w-4 h-4 text-black" />
                                 <span className="text-sm font-black font-mono text-black">{(path.xp || 0).toLocaleString()} {t("xp")}</span>
                             </motion.div>
-                            <ProgressRing percent={path.completionRate || 0} color={path.ringColor || "#ffffff"} />
+                            <ProgressRing percent={progress || path.completionRate || 0} color={ringColor || "#ffffff"} />
                         </div>
                     </div>
                 </div>
 
                 {/* === Description === */}
                 <div className="px-6 pt-3 pb-4">
-                    <p className="text-sm text-zinc-400 leading-relaxed font-mono">{t(path.longDescKey) || t(path.descriptionKey)}</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed font-mono">{getText(path.longDesc, path.longDescKey) || getText(path.description, path.descriptionKey)}</p>
                 </div>
 
                 {/* === Stats Bar === */}
@@ -301,7 +339,7 @@ export function QuestCard({
                             <span className="text-zinc-600">•</span>
                             <span className="text-zinc-500 flex items-center gap-1.5">
                                 <Clock className="w-3.5 h-3.5" />
-                                <span className="font-bold text-zinc-300">{t(path.durationKey) || "N/A"}</span>
+                                <span className="font-bold text-zinc-300">{path.durationKey ? t(path.durationKey) : (path.duration || "N/A")}</span>
                             </span>
                         </div>
 
@@ -328,17 +366,17 @@ export function QuestCard({
                             transition={{ duration: 1.5, repeat: Infinity }}
                             className="text-2xl"
                         >
-                            {path.bossEmoji || "👾"}
+                            {bossEmoji}
                         </motion.div>
                         <div className="flex-1 min-w-0 font-mono">
                             <div className="flex items-center gap-2">
                                 <Swords className="w-3 h-3 text-red-400" />
                                 <span className="text-[10px] font-black text-red-400 uppercase tracking-wider">{t("finalBoss")}</span>
                             </div>
-                            <div className="text-xs font-bold text-white">{t(path.bossKey) || t("unknownFoe")}</div>
+                            <div className="text-xs font-bold text-white">{path.bossKey ? t(path.bossKey) : (path.boss || t("unknownFoe"))}</div>
                         </div>
                         <div className="text-right font-mono">
-                            <div className="text-[10px] text-red-400/60">{t("hp")} {(path.bossHp || 0).toLocaleString()}</div>
+                            <div className="text-[10px] text-red-400/60">{t("hp")} {(path.bossHp || (diff * 5000)).toLocaleString()}</div>
                             <div className="w-20 h-1.5 bg-red-900/30 overflow-hidden mt-0.5">
                                 <div className="h-full bg-red-500 w-full" />
                             </div>
@@ -352,7 +390,7 @@ export function QuestCard({
                         <span className="text-neon-green/60">// </span>{t("lootDrops")}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {(path.rewards || []).map((r: { nameKey: string; type: string; emoji: string }, i: number) => (
+                        {(path.rewards || []).map((r: { nameKey: string; name: string; type: string; emoji: string }, i: number) => (
                             <motion.div
                                 key={i}
                                 whileHover={{ scale: 1.05, y: -2 }}
@@ -363,7 +401,7 @@ export function QuestCard({
                             >
                                 <span className="text-sm">{r.emoji}</span>
                                 <div>
-                                    <div className="text-[10px] font-bold text-white">{t(r.nameKey)}</div>
+                                    <div className="text-[10px] font-bold text-white">{r.nameKey ? t(r.nameKey) : r.name}</div>
                                     <div className={`text-[8px] font-black uppercase tracking-wider ${r.type === "NFT" ? "text-amber-400" : "text-neon-purple"}`}>
                                         {r.type}
                                     </div>
@@ -374,7 +412,7 @@ export function QuestCard({
                             <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/[0.02] border border-white/[0.06] font-mono">
                                 <span className="text-sm">{i === 0 ? "🎨" : "📛"}</span>
                                 <div>
-                                    <div className="text-[10px] font-bold text-zinc-400">{t(l)}</div>
+                                    <div className="text-[10px] font-bold text-zinc-400">{t(l) || l}</div>
                                     <div className="text-[8px] font-black uppercase tracking-wider text-zinc-600">{t("cosmetic")}</div>
                                 </div>
                             </div>
@@ -401,18 +439,18 @@ export function QuestCard({
                                 <Button
                                     onClick={() => onBeginQuest(path.slug)}
                                     size="lg"
-                                    className={`btn-hacker ${path.bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
+                                    className={`btn-hacker ${bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
                                 >
-                                    ⚔️ {t("beginQuest")}
+                                    ⚔️ {isCompleted ? "Review Quest" : isEnrolled ? "Continue Quest" : "Enroll Quest"}
                                     <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                 </Button>
                             ) : (
                                 <Link href={linkHref}>
                                     <Button
                                         size="lg"
-                                        className={`btn-hacker ${path.bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
+                                        className={`btn-hacker ${bgAccent || "bg-white/10"} ${path.textColor?.includes('black') ? 'text-black' : 'text-white'} font-black font-mono uppercase tracking-wider transition-all duration-300 relative overflow-hidden group/btn`}
                                     >
-                                        ⚔️ {t("beginQuest")}
+                                        ⚔️ {isCompleted ? "Review Quest" : isEnrolled ? "Continue Quest" : "Enroll Quest"}
                                         <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                     </Button>
                                 </Link>
@@ -424,6 +462,7 @@ export function QuestCard({
         </motion.div>
     );
 }
+
 
 /* ─── Main Section ─── */
 export function LearningPaths() {

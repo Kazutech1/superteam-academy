@@ -121,11 +121,9 @@ export default function CourseDetailPage() {
         if (!isLoading) {
             coursesApi.getCourseBySlug(slug as string).then(res => {
                 const { course: c, enrollment, milestoneProgress } = res.data;
-                const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "Beginner";
 
-                const formatDuration = (d: any) => {
+                const formatDuration = (d: number) => {
                     if (!d) return "Self-paced";
-                    if (typeof d === "string") return d;
                     if (d < 60) return `${d} mins`;
                     const hrs = Math.floor(d / 60);
                     return `${hrs} hr${hrs > 1 ? "s" : ""}`;
@@ -138,50 +136,54 @@ export default function CourseDetailPage() {
 
                 // Merge data and compute progress
                 const merged = {
-                    ...defaultCourse, // fallback for schema safety
                     ...c,
-                    difficulty: capitalize(c.difficulty),
                     enrolled: !!enrollment,
                     progress: enrollment?.progress || 0,
-                    instructor: c.author || defaultCourse.instructor,
+                    instructor: c.author,
                     duration: formatDuration(c.duration),
                     students: formatStudents(c.enrollmentCount || 0),
                     xp: c.totalXP || 0,
                 };
 
                 // Update milestone and lesson progress
-                if (milestoneProgress && Array.isArray(milestoneProgress)) {
-                    merged.milestones = merged.milestones.map((m: any) => {
-                        const prog = milestoneProgress.find(p => p.milestoneId === (m._id || m.id));
-
-                        // Merge all sub-items for display
-                        const checkItemCompleted = (item: any) => {
-                            if (!enrollment) return false;
-                            const isTest = item.questions || item.codeChallenge || item.type === 'quiz';
-                            if (isTest) return prog?.allTestsPassed || false;
-                            return false; // For now lessons/resources are not individually tracked or always pending
-                        };
+                if (c.milestones) {
+                    merged.milestones = c.milestones.map((m: any) => {
+                        const prog = milestoneProgress?.find(p => p.milestoneId === m._id);
 
                         const allItems = [
-                            ...(m.lessons || []).map((l: any) => ({ ...l, type: l.type || 'video', completed: checkItemCompleted(l) })),
-                            ...(m.resources || []).map((r: any) => ({ ...r, type: r.type || 'doc', completed: checkItemCompleted(r) })),
-                            ...(m.tests || []).map((t: any) => ({ ...t, type: t.type || 'test', completed: checkItemCompleted(t) }))
+                            ...(m.lessons || []).map((l: any) => ({
+                                ...l,
+                                type: l.type || 'video',
+                                completed: prog?.completedLessons?.includes(l._id) || false
+                            })),
+                            ...(m.tests || []).map((t: any) => ({
+                                ...t,
+                                type: t.type || 'test',
+                                completed: prog?.testAttempts?.find((a: any) => a.testId === t._id)?.passed || false
+                            }))
                         ].sort((a, b) => (a.order || 0) - (b.order || 0));
 
                         return {
                             ...m,
+                            xp: m.xpReward || m.xp || 0,
                             completed: prog?.allTestsPassed || false,
                             allItems
                         };
                     });
                 }
 
+                // Recalculate granular progress
+                const totalItems = (merged.milestones || []).reduce((acc: number, m: any) => acc + (m.allItems?.length || 0), 0);
+                const completedItemsCount = (merged.milestones || []).reduce((acc: number, m: any) => {
+                    return acc + (m.allItems?.filter((i: any) => i.completed).length || 0);
+                }, 0);
+                merged.progress = totalItems > 0 ? Math.round((completedItemsCount / totalItems) * 100) : 0;
+
                 setCourseState(merged);
-                setExpandedMilestone(merged.milestones[0]?._id || merged.milestones[0]?.id || null);
+                setExpandedMilestone(merged.milestones?.[0]?._id || null);
                 setLoading(false);
             }).catch(err => {
                 console.error(err);
-                setCourseState(defaultCourse);
                 setLoading(false);
             });
         }
@@ -197,8 +199,8 @@ export default function CourseDetailPage() {
 
     const course = courseState || defaultCourse;
     const diff = diffColors[course.difficulty] || diffColors.Beginner;
-    const completedLessons = course.milestones.flatMap((m: any) => m.lessons || []).filter((l: any) => l.completed).length;
-    const totalLessons = course.milestones.flatMap((m: any) => m.lessons || []).length;
+    const completedItemsCount = course.milestones.flatMap((m: any) => m.allItems || []).filter((i: any) => i.completed).length;
+    const totalItemsCount = course.milestones.flatMap((m: any) => m.allItems || []).length;
 
     return (
         <div className="min-h-screen bg-[#020408] relative overflow-hidden">
@@ -279,13 +281,14 @@ export default function CourseDetailPage() {
                         <h2 className="text-lg font-black text-white font-mono flex items-center gap-2">
                             <Trophy className="w-5 h-5 text-amber-400" />
                             <span className="text-neon-green/40">// </span>milestones
-                            <span className="text-[10px] text-zinc-600 font-bold ml-auto">{completedLessons}/{totalLessons} lessons</span>
+                            <span className="text-[10px] text-zinc-600 font-bold ml-auto">{completedItemsCount}/{totalItemsCount} items</span>
                         </h2>
 
                         {course.milestones.map((milestone: any, mIdx: number) => {
                             const isOpen = expandedMilestone === milestone.id || expandedMilestone === milestone._id;
-                            const milestoneProgress = (milestone.lessons || []).filter((l: any) => l.completed).length;
-                            const milestonePct = milestone.lessons?.length ? Math.round((milestoneProgress / milestone.lessons.length) * 100) : 0;
+                            const milestoneItems = milestone.allItems || [];
+                            const completedCount = milestoneItems.filter((i: any) => i.completed).length;
+                            const milestonePct = milestoneItems.length ? Math.round((completedCount / milestoneItems.length) * 100) : 0;
 
                             return (
                                 <div key={milestone.id || milestone._id || mIdx} className="border border-white/[0.06] bg-white/[0.02] overflow-hidden relative group">
@@ -337,7 +340,7 @@ export default function CourseDetailPage() {
                                                         return (
                                                             <Link
                                                                 key={itemId}
-                                                                href={`/courses/${slug}/lessons/${itemId}`}
+                                                                href={`/courses/${slug}/${item.questions || item.codeChallenge || item.type === 'test' || item.type === 'quiz' ? 'tests' : 'lessons'}/${itemId}`}
                                                                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors group/lesson font-mono"
                                                             >
                                                                 <Icon className={`w-4 h-4 ${ti.color} shrink-0`} />
@@ -406,12 +409,19 @@ export default function CourseDetailPage() {
                                             await coursesApi.enrollCourse(slug as string);
                                         }
 
-                                        const firstUncompleted = course.milestones
-                                            .flatMap((m: any) => m.lessons || [])
-                                            .find((l: any) => !l.completed);
-                                        const targetLesson = firstUncompleted || course.milestones[0]?.lessons?.[0];
-                                        if (targetLesson) {
-                                            window.location.href = `/courses/${slug}/lessons/${targetLesson.id || targetLesson._id}`;
+                                        // Find first incomplete milestone or item
+                                        let targetItem = null;
+                                        for (const m of course.milestones) {
+                                            if (!m.completed) {
+                                                targetItem = m.allItems?.find((item: any) => !item.completed);
+                                                if (targetItem) break;
+                                            }
+                                        }
+
+                                        const item = targetItem || course.milestones[0]?.allItems?.[0];
+                                        if (item) {
+                                            const type = item.questions || item.codeChallenge || item.type === 'test' || item.type === 'quiz' ? 'tests' : 'lessons';
+                                            window.location.href = `/courses/${slug}/${type}/${item._id || item.id}`;
                                         }
                                     } catch (err) {
                                         console.error("Failed to enrollment/navigate:", err);
@@ -419,7 +429,7 @@ export default function CourseDetailPage() {
                                 }}
                                 className="w-full py-3 bg-neon-green text-black text-sm font-black font-mono uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-neon-green/90 hover:shadow-[0_0_30px_rgba(0,255,163,0.2)] transition-all"
                             >
-                                {course.progress > 0 ? "Continue Learning" : "Start Course"}
+                                {course.progress === 100 ? "Review Quest" : course.enrolled ? "Continue Quest" : "Enroll Quest"}
                                 <ChevronRight className="w-4 h-4" />
                             </motion.button>
 
@@ -427,7 +437,7 @@ export default function CourseDetailPage() {
                             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.05] font-mono">
                                 {[
                                     { label: "Milestones", value: String(course.milestones.length), icon: Trophy, color: "text-amber-400" },
-                                    { label: "Lessons", value: String(totalLessons), icon: BookOpen, color: "text-neon-cyan" },
+                                    { label: "Items", value: String(totalItemsCount), icon: BookOpen, color: "text-neon-cyan" },
                                     { label: "Duration", value: course.duration, icon: Clock, color: "text-neon-purple" },
                                     { label: "Students", value: course.students, icon: Users, color: "text-zinc-400" },
                                 ].map((s) => (

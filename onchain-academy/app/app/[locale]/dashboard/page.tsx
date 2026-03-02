@@ -24,6 +24,8 @@ import {
     Shield
 } from "lucide-react";
 import { dashboardApi, DashboardData } from "@/lib/dashboard";
+import { achievementsApi, AchievementReceipt } from "@/lib/achievements";
+import { AchievementCard } from "@/components/ui/achievement-card";
 import { useTranslations } from "next-intl";
 
 export default function DashboardPage() {
@@ -32,6 +34,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const { disconnect, connected } = useWallet();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+    const [achievements, setAchievements] = useState<AchievementReceipt[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +56,14 @@ export default function DashboardPage() {
     useEffect(() => {
         if (isAuthenticated) {
             setLoading(true);
-            dashboardApi.getDashboardData()
-                .then(res => setDashboardData(res.data))
+            Promise.all([
+                dashboardApi.getDashboardData(),
+                achievementsApi.getMyAchievements()
+            ])
+                .then(([dashRes, achRes]) => {
+                    setDashboardData(dashRes.data);
+                    setAchievements(achRes.data);
+                })
                 .catch(err => {
                     console.error("Dashboard error:", err);
                     setError(t("failedToLoad"));
@@ -200,7 +209,6 @@ export default function DashboardPage() {
                                 </div>
                             </motion.div>
 
-                            {/* Recent Achievements */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -212,12 +220,31 @@ export default function DashboardPage() {
                                         <Trophy className="w-4 h-4 text-amber-400" />
                                         <span className="text-sm font-bold text-white uppercase tracking-wider">{t("trophies")}</span>
                                     </div>
-                                    <span className="text-[10px] text-zinc-500 font-bold">0 {t("unlocked")}</span>
+                                    <span className="text-[10px] text-zinc-500 font-bold">{achievements.length} {t("unlocked")}</span>
                                 </div>
-                                <div className="p-5 flex flex-col items-center justify-center text-center space-y-3 min-h-[150px]">
-                                    <Trophy className="w-8 h-8 text-zinc-700 mx-auto" />
-                                    <div className="text-xs text-zinc-600 font-mono uppercase tracking-widest font-black">{t("noLootYet")}</div>
-                                    <div className="text-[10px] text-zinc-500 font-mono">{t("completeQuests")}</div>
+                                <div className="p-4 space-y-3">
+                                    {achievements.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {achievements.slice(0, 3).map((receipt) => (
+                                                <AchievementCard
+                                                    key={receipt.achievementTypeKey}
+                                                    achievement={receipt.achievementType!}
+                                                    receipt={receipt}
+                                                />
+                                            ))}
+                                            {achievements.length > 3 && (
+                                                <Link href="/profile" className="block text-center py-2 text-[10px] font-mono font-bold text-zinc-500 hover:text-white uppercase tracking-widest transition-colors">
+                                                    + {achievements.length - 3} {t("moreAchievements")}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-center space-y-3 py-6">
+                                            <Trophy className="w-8 h-8 text-zinc-700 mx-auto" />
+                                            <div className="text-xs text-zinc-600 font-mono uppercase tracking-widest font-black">{t("noLootYet")}</div>
+                                            <div className="text-[10px] text-zinc-500 font-mono">{t("completeQuests")}</div>
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         </div>

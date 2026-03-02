@@ -24,6 +24,7 @@ export interface SandboxResult {
 const SOLANA_MOCKS = `
 class PublicKey {
     constructor(key) {
+        if (key instanceof PublicKey) { this._key = key._key; return; }
         this._key = typeof key === 'string' ? key : (key instanceof Uint8Array ? Array.from(key).map(b => b.toString(16).padStart(2,'0')).join('') : 'mock-pubkey');
     }
     toBase58() { return this._key; }
@@ -31,6 +32,7 @@ class PublicKey {
     toBuffer() { return new Uint8Array(32); }
     toBytes() { return new Uint8Array(32); }
     equals(other) { return this._key === (other && other._key); }
+    static unique() { return new PublicKey('gen-' + Math.random().toString(36).slice(2)); }
 }
 PublicKey.default = new PublicKey('11111111111111111111111111111112');
 
@@ -61,7 +63,12 @@ const SystemProgram = {
     },
     createAccount: function(params) {
         return new TransactionInstruction({
-            programId: SystemProgram.programId, keys: [], data: new Uint8Array(0),
+            programId: SystemProgram.programId,
+            keys: [
+                { pubkey: params.fromPubkey, isSigner: true, isWritable: true },
+                { pubkey: params.newAccountPubkey, isSigner: true, isWritable: true },
+            ],
+            data: new Uint8Array(0),
         });
     },
 };
@@ -72,6 +79,7 @@ class Connection {
     async getLatestBlockhash() { return { blockhash: 'mock-blockhash', lastValidBlockHeight: 100 }; }
     async confirmTransaction() { return { value: { err: null } }; }
     async sendTransaction() { return 'mock-tx-sig-' + Math.random().toString(36).slice(2); }
+    async getAccountInfo() { return { data: new Uint8Array(0), lamports: 1000000, owner: SystemProgram.programId }; }
 }
 
 const Keypair = {
@@ -91,6 +99,21 @@ const sendAndConfirmTransaction = async function(connection, transaction, signer
     return 'mock-tx-sig-' + Math.random().toString(36).slice(2);
 };
 `;
+
+/**
+ * Basic linting for common beginner mistakes
+ */
+export function lintCode(code: string): string | null {
+    // Check for unbalanced braces
+    const openBraces = (code.match(/\{/g) || []).length;
+    const closeBraces = (code.match(/\}/g) || []).length;
+    if (openBraces !== closeBraces) return "SYNTAX ERROR: Unbalanced curly de-shackles detected (braces).";
+
+    // Check for empty code
+    if (code.trim().length < 5) return "SYSTEM ERROR: Null sequence detected. Code too short for execution.";
+
+    return null;
+}
 
 // ─── TypeScript → JavaScript Transform ────────────────────────────────────────
 // Handles the common TS patterns found in Solana learning challenges.
@@ -153,12 +176,16 @@ export function executeInSandbox(
                         const __expectedOutput = ${JSON.stringify(tc.expectedOutput)};
                         // Try evaluating the input as a function call
                         const __result = eval(__testInput);
-                        const __resultStr = typeof __result === 'object' ? JSON.stringify(__result) : String(__result);
-                        if (__resultStr === __expectedOutput || __result == __expectedOutput) {
-                            __testResults.push({ id: ${JSON.stringify(tc.id)}, passed: true });
-                        } else {
-                            __testResults.push({ id: ${JSON.stringify(tc.id)}, passed: false, error: 'Expected: ' + __expectedOutput + ', Got: ' + __resultStr });
-                        }
+                        const __resultStr = (typeof __result === 'object' && __result !== null) ? JSON.stringify(__result) : String(__result);
+                        
+                        const __passed = __resultStr.trim() === __expectedOutput.trim() || __result == __expectedOutput;
+                        
+                        __testResults.push({ 
+                            id: ${JSON.stringify(tc.id)}, 
+                            passed: __passed,
+                            actualOutput: __resultStr,
+                            error: __passed ? null : ('Expected: "' + __expectedOutput + '", Got: "' + __resultStr + '"')
+                        });
                     } catch(e) {
                         __testResults.push({ id: ${JSON.stringify(tc.id)}, passed: false, error: e.message });
                     }
@@ -199,21 +226,18 @@ export function executeInSandbox(
                     // Execute user code
                     ${transformedCode}
                     __codeRan = true;
+
+                    // Run test cases if code compiled
+                    ${testRunnerCode}
                 } catch(e) {
                     __codeError = e.message || String(e);
-                    __logs.push('Error: ' + __codeError);
-                }
-
-                // Run test cases if code compiled
-                if (__codeRan) {
-                    try {
-                        ${testRunnerCode}
-                    } catch(e) {
-                        __logs.push('Test runner error: ' + e.message);
+                    if (!__codeRan) {
+                        __logs.push('Error: ' + __codeError);
+                        // All tests fail if code didn't compile
+                        ${testCases.map(tc => `__testResults.push({ id: ${JSON.stringify(tc.id)}, passed: false, error: __codeError || 'Code failed to execute' });`).join('\n')}
+                    } else {
+                        __logs.push('Test runner error: ' + __codeError);
                     }
-                } else {
-                    // All tests fail if code didn't compile
-                    ${testCases.map(tc => `__testResults.push({ id: ${JSON.stringify(tc.id)}, passed: false, error: __codeError || 'Code failed to execute' });`).join('\n')}
                 }
 
                 // Send results back

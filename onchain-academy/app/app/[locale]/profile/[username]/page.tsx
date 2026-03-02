@@ -26,6 +26,8 @@ import {
     Settings,
 } from "lucide-react";
 import { profileApi, ProfileData } from "@/lib/profile";
+import { achievementsApi, AchievementReceipt, AchievementType } from "@/lib/achievements";
+import { AchievementCard } from "@/components/ui/achievement-card";
 import { useAuth } from "@/components/providers/auth-context";
 import { useTranslations } from "next-intl";
 
@@ -101,6 +103,8 @@ export default function ProfilePage() {
     const { username } = useParams<{ username: string }>();
     const { user: authUser } = useAuth();
     const [data, setData] = useState<ProfileData | null>(null);
+    const [achievements, setAchievements] = useState<AchievementReceipt[]>([]);
+    const [allTypes, setAllTypes] = useState<AchievementType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -112,10 +116,18 @@ export default function ProfilePage() {
             ? profileApi.getMe()
             : profileApi.getPublicProfile(username);
 
-        fetchProfile
-            .then(res => setData(res.data))
+        Promise.all([
+            fetchProfile,
+            achievementsApi.getMyAchievements(),
+            achievementsApi.getAchievementTypes()
+        ])
+            .then(([profRes, achRes, typeRes]) => {
+                setData(profRes.data);
+                setAchievements(achRes.data);
+                setAllTypes(typeRes.data);
+            })
             .catch(err => {
-                console.error("Failed to fetch profile:", err);
+                console.error("Failed to fetch profile/achievements:", err);
                 setError(err.message || t("failedToLoad"));
             })
             .finally(() => setLoading(false));
@@ -332,7 +344,7 @@ export default function ProfilePage() {
                             </div>
                             <div className="flex justify-between items-center mt-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                                 <span>{t("progress", { percent: Math.round(levelProgress) })}</span>
-                                <span>{(nextLevelXP - xp_total).toLocaleString()} {t("xpToLevel", { level: profile.level + 1 })}</span>
+                                <span>{t("xpToLevel", { xp: (nextLevelXP - xp_total).toLocaleString(), level: profile.level + 1 })}</span>
                             </div>
                         </motion.div>
 
@@ -374,6 +386,29 @@ export default function ProfilePage() {
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+                        </motion.div>
+
+                        {/* ── Achievements Catalog ── */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="border border-white/[0.06] bg-[#0a0f1a]/90 overflow-hidden">
+                            <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 text-amber-400" />
+                                    <span className="text-sm font-bold text-white uppercase tracking-wider">{t("achievements")}</span>
+                                </div>
+                                <span className="text-[10px] text-zinc-500 font-bold">{achievements.length} / {allTypes.length}</span>
+                            </div>
+                            <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
+                                {allTypes.map((type) => {
+                                    const receipt = achievements.find(r => r.achievementTypeKey === type.key);
+                                    return (
+                                        <AchievementCard
+                                            key={type.key}
+                                            achievement={type}
+                                            receipt={receipt}
+                                        />
+                                    );
+                                })}
                             </div>
                         </motion.div>
                     </div>
