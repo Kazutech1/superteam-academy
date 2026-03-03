@@ -9,6 +9,7 @@ export interface AuthUser {
     username?: string;
     totalXP: number;
     level: number;
+    role?: string;
 }
 
 export interface AuthResponse {
