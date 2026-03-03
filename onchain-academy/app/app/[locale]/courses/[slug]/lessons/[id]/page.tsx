@@ -18,6 +18,7 @@ import {
     Shield,
     X,
 } from "lucide-react";
+import AIAssistant from "@/components/ai/ai-assistant";
 
 const typeIcons: Record<string, { icon: any; color: string }> = {
     video: { icon: Play, color: "text-neon-cyan" },
@@ -396,6 +397,12 @@ export default function LessonPage() {
                     </div>
                 </div>
             </div>
+            {lesson && (
+                <AIAssistant
+                    lessonContent={lesson.content}
+                    lessonTitle={lesson.title}
+                />
+            )}
         </div>
     );
 }
