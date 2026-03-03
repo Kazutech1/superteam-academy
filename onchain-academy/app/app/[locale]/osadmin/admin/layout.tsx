@@ -4,59 +4,94 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-    LayoutDashboard,
-    Users,
-    BookOpen,
-    BarChart2,
-    MessageSquare,
-    Trophy,
-    LogOut,
-    Menu,
-    X,
-    ShieldCheck,
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  BarChart2,
+  MessageSquare,
+  Trophy,
+  LogOut,
+  Menu,
+  X,
+  ShieldCheck,
 } from "lucide-react";
 
+import { fetchWithAuth } from "@/lib/api";
+
 const NAV = [
-    { href: "/osadmin/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/osadmin/admin/users", label: "Users", icon: Users },
-    { href: "/osadmin/admin/courses", label: "Courses", icon: BookOpen },
-    { href: "/osadmin/admin/analytics", label: "Analytics", icon: BarChart2 },
-    { href: "/osadmin/admin/community", label: "Community", icon: MessageSquare },
-    { href: "/osadmin/admin/achievements", label: "Achievements", icon: Trophy },
+  { href: "/osadmin/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/osadmin/admin/users", label: "Users", icon: Users },
+  { href: "/osadmin/admin/courses", label: "Courses", icon: BookOpen },
+  { href: "/osadmin/admin/analytics", label: "Analytics", icon: BarChart2 },
+  { href: "/osadmin/admin/community", label: "Community", icon: MessageSquare },
+  { href: "/osadmin/admin/achievements", label: "Achievements", icon: Trophy },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const [ready, setReady] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [adminName, setAdminName] = useState("Admin");
+  const router = useRouter();
+  const pathname = usePathname();
+  const [ready, setReady] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminName, setAdminName] = useState("Admin");
 
-    useEffect(() => {
-        try {
-            const raw = localStorage.getItem("osmos_user");
-            if (!raw) { router.replace("/"); return; }
-            const user = JSON.parse(raw);
-            if (user?.role !== "admin") { router.replace("/"); return; }
-            setAdminName(user.name || user.username || "Admin");
-            setReady(true);
-        } catch {
-            router.replace("/");
+  useEffect(() => {
+    async function verifyAccess() {
+      try {
+        const raw = localStorage.getItem("osmos_user");
+        if (!raw) {
+          router.replace("/");
+          return;
         }
-    }, [router]);
 
-    if (!ready) {
-        return (
-            <div className="admin-loading">
-                <ShieldCheck size={32} className="admin-loading-icon" />
-                <span>Verifying admin access…</span>
-            </div>
-        );
+        const user = JSON.parse(raw);
+
+        // If role is missing or not admin, try to verify with backend
+        if (user && user.role !== "admin") {
+          try {
+            // Attempt an admin-only call to check real role
+            const res = await fetchWithAuth<{ success: boolean }>("/admin/analytics/overview");
+            if (res.success) {
+              // User is an admin but role was missing/wrong in localStorage
+              const updatedUser = { ...user, role: "admin" };
+              localStorage.setItem("osmos_user", JSON.stringify(updatedUser));
+              setAdminName(updatedUser.name || updatedUser.username || "Admin");
+              setReady(true);
+              return;
+            }
+          } catch (err) {
+            // Forbidden or error — not an admin
+            router.replace("/");
+            return;
+          }
+        }
+
+        if (user?.role !== "admin") {
+          router.replace("/");
+          return;
+        }
+
+        setAdminName(user.name || user.username || "Admin");
+        setReady(true);
+      } catch {
+        router.replace("/");
+      }
     }
 
+    verifyAccess();
+  }, [router]);
+
+  if (!ready) {
     return (
-        <div className="admin-shell">
-            <style>{`
+      <div className="admin-loading">
+        <ShieldCheck size={32} className="admin-loading-icon" />
+        <span>Verifying admin access…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-shell">
+      <style>{`
         :root {
           --admin-bg: #0a0a0f;
           --admin-sidebar: #0f0f1a;
@@ -352,71 +387,71 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .aempty-icon { font-size: 40px; margin-bottom: 10px; }
       `}</style>
 
-            {/* Sidebar */}
-            <aside className={`admin-sidebar${sidebarOpen ? " open" : ""}`}>
-                <div className="admin-sidebar-logo">
-                    <div className="admin-logo-badge">O</div>
-                    <div>
-                        <div className="admin-logo-text">Osmos</div>
-                        <div className="admin-logo-sub">Admin Panel</div>
-                    </div>
-                </div>
-
-                <nav className="admin-nav">
-                    {NAV.map(({ href, label, icon: Icon }) => {
-                        const active = pathname.includes(href);
-                        return (
-                            <Link
-                                key={href}
-                                href={href}
-                                className={`admin-nav-link${active ? " active" : ""}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <Icon size={16} />
-                                {label}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <div className="admin-sidebar-footer">
-                    <div className="admin-user-badge">
-                        <div className="admin-user-avatar">{adminName[0]?.toUpperCase()}</div>
-                        <div>
-                            <div className="admin-user-name">{adminName}</div>
-                            <div className="admin-user-role">Admin</div>
-                        </div>
-                    </div>
-                    <button
-                        className="admin-logout-btn"
-                        onClick={() => {
-                            localStorage.removeItem("osmos_token");
-                            localStorage.removeItem("osmos_user");
-                            window.location.href = "/";
-                        }}
-                    >
-                        <LogOut size={14} /> Sign Out
-                    </button>
-                </div>
-            </aside>
-
-            {/* Mobile overlay */}
-            {sidebarOpen && (
-                <div className="admin-overlay" onClick={() => setSidebarOpen(false)} />
-            )}
-
-            {/* Main area */}
-            <main className="admin-main">
-                <div className="admin-topbar">
-                    <button className="admin-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-                    </button>
-                    <span className="admin-topbar-title">
-                        <span>Osmos</span> Admin Dashboard
-                    </span>
-                </div>
-                <div className="admin-content">{children}</div>
-            </main>
+      {/* Sidebar */}
+      <aside className={`admin-sidebar${sidebarOpen ? " open" : ""}`}>
+        <div className="admin-sidebar-logo">
+          <div className="admin-logo-badge">O</div>
+          <div>
+            <div className="admin-logo-text">Osmos</div>
+            <div className="admin-logo-sub">Admin Panel</div>
+          </div>
         </div>
-    );
+
+        <nav className="admin-nav">
+          {NAV.map(({ href, label, icon: Icon }) => {
+            const active = pathname.includes(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`admin-nav-link${active ? " active" : ""}`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Icon size={16} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <div className="admin-user-badge">
+            <div className="admin-user-avatar">{adminName[0]?.toUpperCase()}</div>
+            <div>
+              <div className="admin-user-name">{adminName}</div>
+              <div className="admin-user-role">Admin</div>
+            </div>
+          </div>
+          <button
+            className="admin-logout-btn"
+            onClick={() => {
+              localStorage.removeItem("osmos_token");
+              localStorage.removeItem("osmos_user");
+              window.location.href = "/";
+            }}
+          >
+            <LogOut size={14} /> Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="admin-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Main area */}
+      <main className="admin-main">
+        <div className="admin-topbar">
+          <button className="admin-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <span className="admin-topbar-title">
+            <span>Osmos</span> Admin Dashboard
+          </span>
+        </div>
+        <div className="admin-content">{children}</div>
+      </main>
+    </div>
+  );
 }
